@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 type LightboxImage = { src: string; alt: string; width: number; height: number };
@@ -9,8 +9,35 @@ type LightboxImage = { src: string; alt: string; width: number; height: number }
 export function Lightbox({ images }: { images: LightboxImage[] }) {
   const [active, setActive] = useState<number | null>(null);
   const [zoomed, setZoomed] = useState(false);
+  const [galleryWidth, setGalleryWidth] = useState(0);
+  const galleryRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
   const current = active === null ? null : images[active];
+
+  useEffect(() => {
+    const gallery = galleryRef.current;
+    if (!gallery) return;
+    const updateWidth = () => setGalleryWidth(gallery.getBoundingClientRect().width);
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(gallery);
+    return () => observer.disconnect();
+  }, []);
+
+  const rows = useMemo(() => {
+    const width = galleryWidth || 1200;
+    const columns = width >= 1280 ? 4 : width >= 640 ? 3 : 2;
+    const gap = width >= 768 ? 20 : 12;
+    const targetHeight = width >= 1280 ? 260 : width >= 768 ? 210 : 150;
+    const grouped = Array.from({ length: Math.ceil(images.length / columns) }, (_, rowIndex) => images.slice(rowIndex * columns, (rowIndex + 1) * columns));
+
+    return grouped.map((row, rowIndex) => {
+      const ratioSum = row.reduce((sum, image) => sum + Math.max(image.width / image.height, 0.1), 0);
+      const height = (width - gap * (row.length - 1)) / ratioSum;
+      const isLastRow = rowIndex === grouped.length - 1 && row.length < columns;
+      return { images: row, height: isLastRow ? Math.min(height, targetHeight) : height, isLastRow };
+    });
+  }, [galleryWidth, images]);
 
   function goTo(index: number) {
     setActive((index + images.length) % images.length);
@@ -30,12 +57,17 @@ export function Lightbox({ images }: { images: LightboxImage[] }) {
   }, [active, images.length]);
 
   return <>
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 xl:grid-cols-4">
-      {images.map((image, index) => <button key={`${image.src}-${index}`} onClick={() => { setActive(index); setZoomed(false); }} className="group block w-full text-left" aria-label={`Open ${image.alt}`}>
-        <div className="relative aspect-[4/3] overflow-hidden bg-fog">
-          <Image src={image.src} alt={image.alt} fill sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw" className="object-contain transition duration-700 ease-out group-hover:scale-[1.02]" />
-        </div>
-      </button>)}
+    <div ref={galleryRef} className="space-y-3 md:space-y-5">
+      {rows.map((row, rowIndex) => <div key={rowIndex} className="flex min-w-0 gap-3 md:gap-5" style={{ height: row.height }}>
+        {row.images.map((image) => {
+          const ratio = Math.max(image.width / image.height, 0.1);
+          const style = row.isLastRow ? { flex: `0 0 ${ratio * row.height}px` } : { flex: `${ratio} 1 0%` };
+          const index = images.indexOf(image);
+          return <button key={`${image.src}-${index}`} onClick={() => { setActive(index); setZoomed(false); }} style={style} className="group relative block h-full min-w-0 overflow-hidden bg-paper text-left" aria-label={`Open ${image.alt}`}>
+            <Image src={image.src} alt={image.alt} fill sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw" className="object-cover transition duration-700 ease-out group-hover:scale-[1.02]" />
+          </button>;
+        })}
+      </div>)}
     </div>
     {current && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/95 p-4 md:p-10" role="dialog" aria-modal="true" aria-label="Image viewer">
       <button onClick={() => setActive(null)} className="absolute right-5 top-5 text-white" aria-label="Close lightbox"><X size={24} strokeWidth={1.2} /></button>
