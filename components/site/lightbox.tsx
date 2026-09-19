@@ -33,7 +33,7 @@ export function Lightbox({ images }: { images: LightboxImage[] }) {
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 xl:grid-cols-4">
       {images.map((image, index) => <button key={`${image.src}-${index}`} onClick={() => { setActive(index); setZoomed(false); }} className="group block w-full text-left" aria-label={`Open ${image.alt}`}>
         <div className="relative aspect-[4/3] overflow-hidden bg-fog">
-          <Image src={image.src} alt={image.alt} fill sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw" className="object-cover transition duration-700 ease-out group-hover:scale-[1.02]" />
+          <Image src={image.src} alt={image.alt} fill sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw" className="object-contain transition duration-700 ease-out group-hover:scale-[1.02]" />
         </div>
       </button>)}
     </div>
