@@ -20,7 +20,7 @@ export async function ProjectPage({ slug }: { slug: string }) {
   if (!project) notFound();
   const images = project.images.map((image) => ({ src: image.largeUrl, alt: image.alt ?? `${project.title} - Photo ${String(image.sortOrder + 1).padStart(2, "0")}`, width: image.width, height: image.height }));
   return <main className="mx-auto max-w-[1600px] px-5 pb-20 pt-16 md:px-10 md:pb-32 md:pt-28">
-    <div className="mb-14 grid gap-10 md:mb-24 md:grid-cols-[1fr_280px] md:items-end"><div><p className="mb-5 text-[10px] uppercase tracking-editorial text-muted">{project.category.name}</p><h1 className="font-sans text-6xl font-normal leading-[.9] tracking-[-0.05em] md:text-8xl">{project.title}</h1></div>{project.description && <p className="max-w-xs text-sm leading-6 text-muted">{project.description}</p>}</div>
+    <div className="mb-14 grid gap-10 md:mb-24 md:grid-cols-[1fr_280px] md:items-end"><div><h1 className="font-sans text-6xl font-normal leading-[.9] tracking-[-0.05em] md:text-8xl">{project.title}</h1></div>{project.description && <p className="max-w-xs text-sm leading-6 text-muted">{project.description}</p>}</div>
     <Lightbox images={images} />
   </main>;
 }
