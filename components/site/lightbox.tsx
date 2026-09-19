@@ -25,18 +25,18 @@ export function Lightbox({ images }: { images: LightboxImage[] }) {
   }, []);
 
   const rows = useMemo(() => {
-    const width = galleryWidth || 1200;
+    const width = galleryWidth || 1400;
     const columns = width >= 1280 ? 4 : width >= 640 ? 3 : 2;
     const gap = width >= 768 ? 20 : 12;
-    const targetHeight = width >= 1280 ? 260 : width >= 768 ? 210 : 150;
     const grouped = Array.from({ length: Math.ceil(images.length / columns) }, (_, rowIndex) => images.slice(rowIndex * columns, (rowIndex + 1) * columns));
-
-    return grouped.map((row, rowIndex) => {
+    if (!grouped.length) return [];
+    const rowHeights = grouped.map((row) => {
       const ratioSum = row.reduce((sum, image) => sum + Math.max(image.width / image.height, 0.1), 0);
-      const height = (width - gap * (row.length - 1)) / ratioSum;
-      const isLastRow = rowIndex === grouped.length - 1 && row.length < columns;
-      return { images: row, height: isLastRow ? Math.min(height, targetHeight) : height, isLastRow };
+      return (width - gap * (row.length - 1)) / ratioSum;
     });
+    const rowHeight = Math.min(...rowHeights, 360);
+
+    return grouped.map((row) => ({ images: row, height: rowHeight }));
   }, [galleryWidth, images]);
 
   function goTo(index: number) {
@@ -61,7 +61,7 @@ export function Lightbox({ images }: { images: LightboxImage[] }) {
       {rows.map((row, rowIndex) => <div key={rowIndex} className="flex min-w-0 gap-3 md:gap-5" style={{ height: row.height }}>
         {row.images.map((image) => {
           const ratio = Math.max(image.width / image.height, 0.1);
-          const style = row.isLastRow ? { flex: `0 0 ${ratio * row.height}px` } : { flex: `${ratio} 1 0%` };
+          const style = { flex: `0 0 ${ratio * row.height}px` };
           const index = images.indexOf(image);
           return <button key={`${image.src}-${index}`} onClick={() => { setActive(index); setZoomed(false); }} style={style} className="group relative block h-full min-w-0 overflow-hidden bg-paper text-left" aria-label={`Open ${image.alt}`}>
             <Image src={image.src} alt={image.alt} fill sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw" className="object-cover transition duration-700 ease-out group-hover:scale-[1.02]" />
