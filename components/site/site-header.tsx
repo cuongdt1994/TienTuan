@@ -5,17 +5,18 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
-const links = [
-  ["Commercial & KV", "/commercial"],
-  ["Beauty", "/beauty"],
-  ["Portrait", "/portrait"],
-  ["Contact", "/contact"],
-] as const;
+type HeaderCategory = { name: string; slug: string };
 
-export function SiteHeader({ name }: { name: string }) {
+export function SiteHeader({ name, categories }: { name: string; categories: HeaderCategory[] }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const showBrand = pathname !== "/contact";
+  const links = [
+    ...categories
+      .filter((category) => ["commercial", "beauty", "portrait"].includes(category.slug))
+      .map((category) => [category.name, `/${category.slug}`] as const),
+    ["Contact", "/contact"] as const,
+  ];
   return (
     <header className="relative z-40 bg-paper/95 backdrop-blur-sm">
       <div className="relative mx-auto flex max-w-[1600px] items-center justify-between px-5 py-6 md:px-10 md:py-8 lg:justify-start">
