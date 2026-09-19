@@ -11,6 +11,11 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 *, *::before, *::after {
+  font-family: "Arial Black", Arial, sans-serif !important;
+  font-weight: 900 !important;
+}
+
+.font-brand {
   font-family: "Times New Roman", Times, serif !important;
   font-weight: 700 !important;
 }
