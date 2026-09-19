@@ -1,4 +1,5 @@
+import { getCategoryBySlug } from "@/lib/content";
 import { CategoryPage } from "@/components/site/category-page";
 export const metadata = { title: "Beauty — Tiến Tuấn Photography" };
 export const dynamic = "force-dynamic";
-export default function BeautyPage() { return <CategoryPage slug="beauty" title="Beauty" />; }
+export default async function BeautyPage() { const category = await getCategoryBySlug("beauty"); return <CategoryPage slug="beauty" title={category?.name ?? "Beauty"} />; }

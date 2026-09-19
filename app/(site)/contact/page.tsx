@@ -10,6 +10,7 @@ import {
 export const metadata = {
   title: "Contact — Tiến Tuấn Photography",
 };
+export const dynamic = "force-dynamic";
 
 export default async function ContactPage() {
   const settings = await getSettings();

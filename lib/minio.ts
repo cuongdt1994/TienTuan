@@ -1,4 +1,4 @@
-import { CreateBucketCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CreateBucketCommand, DeleteObjectsCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
 
@@ -37,4 +37,24 @@ export async function readObject(key: string) {
 export async function putObject(key: string, body: Buffer, contentType: string) {
   await s3.send(new PutObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key, Body: body, ContentType: contentType }));
   return objectUrl(key);
+}
+
+export function objectKeyFromUrl(value: string) {
+  try {
+    const pathname = new URL(value).pathname;
+    const prefix = `/${env.MINIO_BUCKET}/`;
+    const start = pathname.indexOf(prefix);
+    return start === -1 ? null : decodeURIComponent(pathname.slice(start + prefix.length));
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteObjectUrls(urls: string[]) {
+  const keys = [...new Set(urls.map(objectKeyFromUrl).filter((key): key is string => Boolean(key)))];
+  for (let index = 0; index < keys.length; index += 1000) {
+    const chunk = keys.slice(index, index + 1000);
+    const result = await s3.send(new DeleteObjectsCommand({ Bucket: env.MINIO_BUCKET, Delete: { Objects: chunk.map((Key) => ({ Key })) } }));
+    if (result.Errors?.length) throw new Error(`Could not delete ${result.Errors.length} image objects`);
+  }
 }

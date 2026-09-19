@@ -43,8 +43,8 @@ export async function getPublishedProjects(categorySlug?: string) {
 
 export async function getProject(slug: string) {
   try {
-    const project = await db.project.findUnique({
-      where: { slug },
+    const project = await db.project.findFirst({
+      where: { slug, status: "PUBLISHED" },
       include: { category: true, images: { orderBy: { sortOrder: "asc" } }, coverImage: true },
     });
     return project;
@@ -59,5 +59,13 @@ export async function getCategories() {
     return categories;
   } catch {
     return [];
+  }
+}
+
+export async function getCategoryBySlug(slug: string) {
+  try {
+    return await db.category.findUnique({ where: { slug } });
+  } catch {
+    return null;
   }
 }

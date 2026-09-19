@@ -4,8 +4,9 @@ import { useState } from "react";
 import { UploadCloud, X, GripVertical, LoaderCircle, CheckCircle2 } from "lucide-react";
 
 type UploadItem = { id: string; name: string; preview: string; progress: number; status: "ready" | "uploading" | "done" | "error" };
+type UploadedImage = { id: string; thumbnailUrl: string; alt: string | null; sortOrder: number };
 
-export function ProjectUploader({ projectId }: { projectId: string }) {
+export function ProjectUploader({ projectId, onUploaded }: { projectId: string; onUploaded?: (image: UploadedImage) => void }) {
   const [items, setItems] = useState<UploadItem[]>([]);
   const [dragging, setDragging] = useState(false);
 
@@ -26,6 +27,8 @@ export function ProjectUploader({ projectId }: { projectId: string }) {
       });
       const processResponse = await fetch(`/api/admin/projects/${projectId}/images/process`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ objectKey, filename: file.name, contentType: file.type }) });
       if (!processResponse.ok) throw new Error("Could not process image");
+      const { image } = await processResponse.json();
+      onUploaded?.(image);
       setItems((current) => current.map((item) => item.id === itemId ? { ...item, progress: 100, status: "done" } : item));
     } catch {
       setItems((current) => current.map((item) => item.id === itemId ? { ...item, status: "error" } : item));
