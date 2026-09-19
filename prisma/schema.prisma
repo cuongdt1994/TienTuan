@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  projects  Project[]
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  title        String
+  slug         String        @unique
+  description  String?
+  status       ProjectStatus @default(DRAFT)
+  sortOrder    Int           @default(0)
+  coverImageId String?        @unique
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images       Image[]
+  coverImage   Image?        @relation("CoverImage", fields: [coverImageId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  publishedAt  DateTime?
+
+  @@index([status, sortOrder])
+  @@index([categoryId, status])
+}
+
+model Image {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  originalUrl  String
+  largeUrl     String
+  mediumUrl    String
+  thumbnailUrl String
+  width        Int
+  height       Int
+  alt          String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  coverOf      Project? @relation("CoverImage")
+
+  @@index([projectId, sortOrder])
+}
+
+model SiteSettings {
+  id                String   @id @default("site")
+  photographerName  String   @default("Tiến Tuấn Photography")
+  phone             String?
+  zalo              String?
+  email             String?
+  instagram         String?
+  facebook          String?
+  websiteTitle      String   @default("Tiến Tuấn Photography")
+  websiteDescription String  @default("Editorial photography for culture, fashion, and people.")
+  updatedAt         DateTime @updatedAt
+}
