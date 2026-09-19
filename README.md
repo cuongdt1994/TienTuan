@@ -1,4 +1,4 @@
-# Tiến Tuấn Photography Portfolio
+# Tien Tuan Photography Portfolio
 
 A self-hosted photography portfolio and lightweight CMS built with Next.js App Router, TypeScript, Tailwind CSS, PostgreSQL, Prisma, MinIO, Sharp, Zod, and dnd-kit.
 

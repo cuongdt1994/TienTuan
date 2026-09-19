@@ -16,7 +16,7 @@ async function main() {
   });
 
   const categories = await Promise.all(
-    ["Commercial & KV", "Beauty", "Portrait"].map((name, index) =>
+    ["Commercial", "Beauty", "Portrait"].map((name, index) =>
       prisma.category.upsert({
         where: { slug: slugify(name, { lower: true }) },
         update: { name, sortOrder: index },
@@ -30,8 +30,8 @@ async function main() {
     update: {},
     create: {
       id: "site",
-      photographerName: process.env.PHOTOGRAPHER_NAME ?? "Tiến Tuấn Photography",
-      websiteTitle: "Tiến Tuấn Photography — Editorial Image Maker",
+      photographerName: process.env.PHOTOGRAPHER_NAME ?? "Tien Tuan Photography",
+      websiteTitle: "Tien Tuan Photography — Editorial Image Maker",
       websiteDescription: "Editorial photography for culture, fashion, and people.",
       phone: "034 237 1168",
       email: "tientuan1408@gmail.com",

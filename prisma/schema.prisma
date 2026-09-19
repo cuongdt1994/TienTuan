@@ -74,13 +74,13 @@ model Image {
 
 model SiteSettings {
   id                String   @id @default("site")
-  photographerName  String   @default("Tiến Tuấn Photography")
+  photographerName  String   @default("Tien Tuan Photography")
   phone             String?
   zalo              String?
   email             String?
   instagram         String?
   facebook          String?
-  websiteTitle      String   @default("Tiến Tuấn Photography")
+  websiteTitle      String   @default("Tien Tuan Photography")
   websiteDescription String  @default("Editorial photography for culture, fashion, and people.")
   updatedAt         DateTime @updatedAt
 }

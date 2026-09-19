@@ -12,8 +12,8 @@ const config: Config = {
         muted: "#77756f",
       },
       fontFamily: {
-        sans: ["var(--font-manrope)", "Arial", "sans-serif"],
-        display: ["var(--font-manrope)", "Arial", "sans-serif"],
+        sans: ["Times New Roman", "Times", "serif"],
+        display: ["Times New Roman", "Times", "serif"],
       },
       letterSpacing: {
         editorial: "0.16em",

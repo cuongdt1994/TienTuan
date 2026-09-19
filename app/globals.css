@@ -10,11 +10,15 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+*, *::before, *::after {
+  font-family: "Times New Roman", Times, serif !important;
+  font-weight: 700 !important;
+}
+
 body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-manrope), Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

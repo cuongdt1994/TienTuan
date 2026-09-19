@@ -9,13 +9,13 @@ export type ProjectWithMedia = Project & {
 
 export const demoSettings: SiteSettings = {
   id: "site",
-  photographerName: process.env.PHOTOGRAPHER_NAME ?? "Tiến Tuấn Photography",
+  photographerName: process.env.PHOTOGRAPHER_NAME ?? "Tien Tuan Photography",
   phone: "034 237 1168",
   zalo: null,
   email: "tientuan1408@gmail.com",
   instagram: "https://www.instagram.com/dotientuann_",
   facebook: "https://fb.com/dotientuan09.05",
-  websiteTitle: "Tiến Tuấn Photography — Editorial Image Maker",
+  websiteTitle: "Tien Tuan Photography — Editorial Image Maker",
   websiteDescription: "Editorial photography for culture, fashion, and people.",
   updatedAt: new Date(),
 };

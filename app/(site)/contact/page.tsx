@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Contact — Tiến Tuấn Photography",
+  title: "Contact — Tien Tuan Photography",
 };
 export const dynamic = "force-dynamic";
 

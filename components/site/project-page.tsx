@@ -8,7 +8,7 @@ export async function getProjectPageMetadata(slug: string): Promise<Metadata> {
   if (!project) return { title: "Project not found" };
   const image = project.coverImage ?? project.images[0];
   return {
-    title: `${project.title} — Tiến Tuấn Photography`,
+    title: `${project.title} — Tien Tuan Photography`,
     description: project.description ?? `${project.title} photography project.`,
     alternates: { canonical: `/${project.slug}` },
     openGraph: { title: project.title, description: project.description ?? undefined, images: image ? [image.largeUrl] : undefined },
