@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 type LightboxImage = { src: string; alt: string; width: number; height: number };
 
@@ -30,19 +30,23 @@ export function Lightbox({ images }: { images: LightboxImage[] }) {
   }, [active, images.length]);
 
   return <>
-    <div className="grid grid-cols-2 items-start gap-3 sm:grid-cols-3 md:gap-5 xl:grid-cols-4">
+    <div className="columns-2 gap-3 sm:columns-3 md:gap-5 xl:columns-4">
       {images.map((image, index) => <button key={`${image.src}-${index}`} onClick={() => { setActive(index); setZoomed(false); }} className="group block w-full text-left" aria-label={`Open ${image.alt}`}>
-        <div className="overflow-hidden bg-fog">
+        <div className="mb-3 break-inside-avoid overflow-hidden bg-fog md:mb-5">
           <Image src={image.src} alt={image.alt} width={image.width} height={image.height} sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw" className="h-auto w-full object-contain transition duration-700 ease-out group-hover:scale-[1.02]" />
         </div>
       </button>)}
     </div>
     {current && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/95 p-4 md:p-10" role="dialog" aria-modal="true" aria-label="Image viewer">
       <button onClick={() => setActive(null)} className="absolute right-5 top-5 text-white" aria-label="Close lightbox"><X size={24} strokeWidth={1.2} /></button>
-      <button onClick={() => setZoomed(!zoomed)} className="absolute bottom-5 right-5 text-white" aria-label={zoomed ? "Zoom out" : "Zoom in"}>{zoomed ? <ZoomOut size={21} strokeWidth={1.2} /> : <ZoomIn size={21} strokeWidth={1.2} />}</button>
       <button onClick={() => goTo((active ?? 0) - 1)} className="absolute left-3 top-1/2 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Previous image"><ChevronLeft size={28} strokeWidth={1.2} /></button>
       <div
-        className={`relative h-[88vh] w-[86vw] transition-transform duration-300 ${zoomed ? "scale-[1.45]" : "scale-100"}`}
+        className={`relative h-[88vh] w-[86vw] transition-transform duration-300 ${zoomed ? "cursor-zoom-out scale-[1.45]" : "cursor-zoom-in scale-100"}`}
+        role="button"
+        tabIndex={0}
+        aria-label={zoomed ? "Zoom out" : "Zoom in"}
+        onClick={() => setZoomed((currentZoom) => !currentZoom)}
+        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setZoomed((currentZoom) => !currentZoom); } }}
         onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; }}
         onTouchEnd={(event) => {
           if (touchStartX.current === null) return;
