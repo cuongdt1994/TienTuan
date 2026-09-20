@@ -6,9 +6,9 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 
-type Category = { id: string; name: string; slug: string; _count?: { projects: number } };
+type Category = { id: string; name: string; slug: string; showOnHome: boolean; _count?: { projects: number } };
 
-function SortableCategoryRow({ category, editingId, editingName, onBeginEdit, onNameChange, onSave, onCancel, onDelete }: {
+function SortableCategoryRow({ category, editingId, editingName, onBeginEdit, onNameChange, onSave, onCancel, onDelete, onToggleHome }: {
   category: Category;
   editingId: string | null;
   editingName: string;
@@ -17,6 +17,7 @@ function SortableCategoryRow({ category, editingId, editingName, onBeginEdit, on
   onSave: (event: FormEvent) => void;
   onCancel: () => void;
   onDelete: (category: Category) => void;
+  onToggleHome: (category: Category) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id });
   const isEditing = editingId === category.id;
@@ -36,6 +37,9 @@ function SortableCategoryRow({ category, editingId, editingName, onBeginEdit, on
           <p className="mt-1 text-xs text-muted">/{category.slug} · {category._count?.projects ?? 0} project{category._count?.projects === 1 ? "" : "s"}</p>
         </div>
         <div className="flex items-center gap-4">
+          <button type="button" onClick={() => onToggleHome(category)} className={`text-[10px] uppercase tracking-editorial ${category.showOnHome ? "text-ink" : "text-muted"}`}>
+            {category.showOnHome ? "Home on" : "Home off"}
+          </button>
           <button type="button" onClick={() => onBeginEdit(category)} className="text-[10px] uppercase tracking-editorial text-muted hover:text-ink">Edit</button>
           <button type="button" onClick={() => onDelete(category)} className="text-[10px] uppercase tracking-editorial text-red-600 hover:text-red-800">Delete</button>
         </div>
@@ -111,6 +115,21 @@ export default function CategoriesPage() {
     load();
   }
 
+  async function toggleHome(category: Category) {
+    setError("");
+    const response = await fetch(`/api/admin/categories/${category.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ showOnHome: !category.showOnHome }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(data.error ?? "Could not update Home visibility.");
+      return;
+    }
+    setCategories((current) => current.map((item) => item.id === category.id ? { ...item, showOnHome: !category.showOnHome } : item));
+  }
+
   async function deleteCategory(category: Category) {
     if (!window.confirm(`Delete category “${category.name}”?`)) return;
     setError("");
@@ -134,7 +153,7 @@ export default function CategoriesPage() {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorder}>
       <SortableContext items={categories.map((category) => category.id)} strategy={verticalListSortingStrategy}>
         <div className="mt-14 max-w-3xl border-t border-line">
-          {categories.map((category) => <SortableCategoryRow key={category.id} category={category} editingId={editingId} editingName={editingName} onBeginEdit={beginEdit} onNameChange={setEditingName} onSave={saveEdit} onCancel={() => setEditingId(null)} onDelete={deleteCategory} />)}
+          {categories.map((category) => <SortableCategoryRow key={category.id} category={category} editingId={editingId} editingName={editingName} onBeginEdit={beginEdit} onNameChange={setEditingName} onSave={saveEdit} onCancel={() => setEditingId(null)} onDelete={deleteCategory} onToggleHome={toggleHome} />)}
         </div>
       </SortableContext>
     </DndContext>

@@ -8,16 +8,17 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [projects, settings] = await Promise.all([getPublishedProjects(), getSettings()]);
+  const homeProjects = projects.filter((project) => project.category.showOnHome);
   const introSeen = (await cookies()).get("portfolio_intro_seen")?.value === "1";
 
   if (settings.introEnabled && !introSeen) {
-    const fallbackAvatar = settings.introAvatarUrl || projects[0]?.coverImage?.largeUrl || projects[0]?.images[0]?.largeUrl;
+    const fallbackAvatar = settings.introAvatarUrl || homeProjects[0]?.coverImage?.largeUrl || homeProjects[0]?.images[0]?.largeUrl;
     return <IntroScreen name={settings.photographerName} avatarUrl={fallbackAvatar} instagram={settings.instagram} facebook={settings.facebook} />;
   }
 
   return <main>
     <section className="site-wide-container pb-12 pt-12 md:pb-20 md:pt-16">
-      <ProjectGrid projects={projects} featured />
+      <ProjectGrid projects={homeProjects} featured />
     </section>
   </main>;
 }

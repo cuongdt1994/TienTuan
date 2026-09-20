@@ -10,11 +10,18 @@ export async function PATCH(request: Request, context: Context) {
   const { id } = await context.params;
   const body = await request.json();
   const name = typeof body.name === "string" ? body.name.trim() : "";
+  const showOnHome = typeof body.showOnHome === "boolean" ? body.showOnHome : undefined;
 
-  if (name.length < 2) return NextResponse.json({ error: "Invalid category name" }, { status: 400 });
+  if (name.length < 2 && typeof showOnHome !== "boolean") return NextResponse.json({ error: "Invalid category update" }, { status: 400 });
 
   try {
-    const category = await db.category.update({ where: { id }, data: { name } });
+    const category = await db.category.update({
+      where: { id },
+      data: {
+        ...(name.length >= 2 ? { name } : {}),
+        ...(typeof showOnHome === "boolean" ? { showOnHome } : {}),
+      },
+    });
     return NextResponse.json({ category });
   } catch {
     return NextResponse.json({ error: "Could not update category. The name may already exist." }, { status: 409 });
