@@ -7,7 +7,9 @@ type UploadStatus = "ready" | "uploading" | "done" | "error";
 type UploadItem = { id: string; name: string; file: File; preview: string; progress: number; status: UploadStatus; attempts: number; error?: string };
 type UploadedImage = { id: string; thumbnailUrl: string; alt: string | null; sortOrder: number; width: number; height: number };
 
-const MAX_CONCURRENCY = 3;
+// Local uploads can safely keep a larger batch moving at once. The queue still
+// preserves retry, pause/resume, cancellation, and per-file progress states.
+const MAX_CONCURRENCY = 20;
 const MAX_ATTEMPTS = 3;
 
 export function ProjectUploader({ projectId, onUploaded }: { projectId: string; onUploaded?: (image: UploadedImage) => void }) {
@@ -120,7 +122,7 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
   }
 
   return <section className="space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted">Uploads use up to 3 files at once and retry failed files automatically.</p><button type="button" onClick={togglePaused} className="flex items-center gap-2 text-[10px] uppercase tracking-editorial underline underline-offset-4">{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? "Resume queue" : "Pause queue"}</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted">Upload tối đa 20 ảnh cùng lúc · tự động thử lại nếu lỗi.</p><button type="button" onClick={togglePaused} className="flex items-center gap-2 text-[10px] uppercase tracking-editorial underline underline-offset-4">{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? "Resume queue" : "Pause queue"}</button></div>
     <label onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); addFiles(event.dataTransfer.files); }} className={`flex min-h-48 cursor-pointer flex-col items-center justify-center border border-dashed ${dragging ? "border-ink bg-fog" : "border-line bg-paper"} p-8 text-center transition-colors`}>
       <UploadCloud size={24} strokeWidth={1.2} />
       <span className="mt-4 text-sm">Drop images here</span>
