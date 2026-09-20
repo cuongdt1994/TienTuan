@@ -75,7 +75,7 @@ export function Lightbox({ images, active, onClose, onPrevious, onNext }: {
       }}
       style={{ touchAction: "none" }}
     >
-      <Image src={current.src} alt={current.alt} fill sizes="95vw" className="object-contain" priority />
+      <Image src={current.src} alt={current.alt} width={current.width} height={current.height} sizes="95vw" className="block h-full w-full object-contain" priority />
     </div>
     <button type="button" onClick={onNext} className="absolute right-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Next image"><ChevronRight size={28} strokeWidth={1.2} /></button>
     <span className="absolute bottom-4 left-4 text-[10px] uppercase tracking-editorial text-white/65">{(active ?? 0) + 1} / {images.length}</span>

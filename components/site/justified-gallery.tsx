@@ -61,7 +61,7 @@ export function JustifiedGallery({ images, targetRowHeight = 240, gap = 12 }: { 
           const ratio = Math.max(image.width / image.height, 0.1);
           const style = { flex: row.isLast ? `0 0 ${ratio * row.height}px` : `${ratio} 1 0%` };
           return <button key={`${image.src}-${index}`} type="button" onClick={() => setActive(index)} style={style} className="group relative block h-full min-w-0 overflow-hidden bg-paper text-left" aria-label={`Open ${image.alt}`}>
-            <Image src={image.src} alt={image.alt} fill sizes="100vw" className="object-contain transition duration-300 ease-out group-hover:scale-[1.015]" />
+            <Image src={image.src} alt={image.alt} width={image.width} height={image.height} sizes="100vw" className="block h-full w-full object-contain transition duration-300 ease-out group-hover:scale-[1.015]" />
           </button>;
         })}
       </div>)}
