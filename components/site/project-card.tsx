@@ -3,13 +3,13 @@ import Link from "next/link";
 import type { Route } from "next";
 import type { ProjectWithMedia } from "@/lib/content";
 
-export function ProjectCard({ project, priority = false, index = 0, horizontal = false }: { project: ProjectWithMedia; priority?: boolean; index?: number; horizontal?: boolean }) {
+export function ProjectCard({ project, priority = false, index = 0, aspectRatio }: { project: ProjectWithMedia; priority?: boolean; index?: number; aspectRatio?: string }) {
   const image = project.coverImage ?? project.images[0];
   if (!image) return null;
   const year = new Date(project.publishedAt ?? project.createdAt).getFullYear();
   return (
     <Link href={`/${project.slug}` as Route} className={`group block animate-fade-up [animation-delay:${Math.min(index * 90, 540)}ms]`}>
-      <div className="relative overflow-hidden bg-fog" style={{ aspectRatio: horizontal ? "3 / 4" : `${image.width} / ${image.height}` }}>
+      <div className="relative aspect-[4/3] overflow-hidden bg-fog" style={aspectRatio ? { aspectRatio } : undefined}>
         <Image
           src={image.mediumUrl}
           alt={image.alt ?? `${project.title} cover`}
