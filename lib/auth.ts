@@ -46,7 +46,7 @@ export async function getSession() {
     const userId = String(payload.userId);
     if (userId !== "dev-admin") {
       const user = await db.user.findUnique({ where: { id: userId }, select: { role: true, authVersion: true } });
-      if (!user || user.role !== "ADMIN" || user.authVersion !== Number(payload.authVersion ?? -1)) return null;
+      if (!user || user.role !== "ADMIN" || user.authVersion !== Number(payload.authVersion ?? 0)) return null;
     }
     return { userId, role: String(payload.role) };
   } catch {
