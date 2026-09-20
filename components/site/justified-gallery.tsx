@@ -1,20 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { Lightbox, type LightboxImage } from "@/components/site/lightbox";
 
 export function JustifiedGallery({ images }: { images: LightboxImage[] }) {
   const [active, setActive] = useState<number | null>(null);
-  const desktopColumns = images.length < 3 ? images.length : Math.ceil(images.length / 2);
-  const galleryStyle = { "--gallery-columns": desktopColumns } as CSSProperties & { "--gallery-columns": number };
 
   function move(direction: number) {
     setActive((current) => current === null ? null : (current + direction + images.length) % images.length);
   }
 
   return <>
-    <div className="project-detail-gallery mx-auto grid w-full max-w-[1120px] gap-4 lg:gap-5" style={galleryStyle}>
+    <div className="mx-auto grid w-full grid-cols-1 gap-x-4 gap-y-14 md:grid-cols-2 md:gap-x-6 md:gap-y-20 lg:grid-cols-3">
       {images.map((image, index) => <button key={`${image.src}-${index}`} type="button" onClick={() => setActive(index)} className="group relative aspect-[3/4] w-full overflow-hidden bg-paper text-left" aria-label={`Open ${image.alt}`}>
         <Image
           src={image.thumbnailSrc ?? image.src}
