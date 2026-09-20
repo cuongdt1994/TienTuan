@@ -67,6 +67,20 @@ body {
   padding-inline: clamp(24px, 3vw, 56px);
 }
 
+.project-detail-title {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: clamp(2.15rem, 4.5vw, 4rem);
+  font-weight: 700 !important;
+  line-height: .98;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 .project-detail-gallery {
   display: flex;
   width: 100%;
