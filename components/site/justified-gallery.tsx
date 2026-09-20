@@ -18,7 +18,7 @@ function galleryGap(width: number) {
 
 function targetRowHeight(width: number) {
   if (width < 640) return width * 0.72;
-  return Math.min(280, Math.max(190, width / 5));
+  return Math.min(340, Math.max(240, width / 4.2));
 }
 
 function createRows(images: LightboxImage[], width: number): GalleryRow[] {
@@ -93,7 +93,7 @@ export function JustifiedGallery({ images }: { images: LightboxImage[] }) {
                 src={image.thumbnailSrc ?? image.src}
                 alt={image.alt}
                 fill
-                sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 100vw"
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 quality={90}
                 className="object-contain transition duration-300 ease-out group-hover:scale-[1.01]"
               />
