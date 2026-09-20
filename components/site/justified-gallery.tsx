@@ -16,50 +16,42 @@ function galleryGap(width: number) {
   return 14;
 }
 
-function targetRowHeight(width: number) {
-  if (width < 640) return width * 0.72;
-  return Math.min(340, Math.max(240, width / 4.2));
-}
-
-function maxImagesPerRow(width: number) {
-  if (width < 640) return 1;
+function maxColumnsForWidth(width: number) {
+  if (width < 640) return 2;
   if (width < 1024) return 4;
   if (width < 1440) return 5;
   return 6;
+}
+
+function maxRowHeight(width: number) {
+  if (width < 640) return 360;
+  if (width < 1024) return 440;
+  return 520;
 }
 
 function createRows(images: LightboxImage[], width: number): GalleryRow[] {
   if (!images.length) return [];
   const safeWidth = Math.max(width, 320);
   const gap = galleryGap(safeWidth);
-  const target = targetRowHeight(safeWidth);
-  const maxPerRow = maxImagesPerRow(safeWidth);
+  const preferredColumns = images.length <= 3 ? images.length : Math.ceil(images.length / 2);
+  const columns = Math.min(maxColumnsForWidth(safeWidth), preferredColumns);
+  const rowCount = Math.max(1, Math.ceil(images.length / columns));
+  const baseCount = Math.floor(images.length / rowCount);
+  const extraImages = images.length % rowCount;
   const rows: LightboxImage[][] = [];
-  let current: LightboxImage[] = [];
-  let ratioSum = 0;
+  let cursor = 0;
 
-  for (const image of images) {
-    const ratio = image.width > 0 && image.height > 0 ? image.width / image.height : 1;
-    const nextCount = current.length + 1;
-    const nextHeight = (safeWidth - gap * (nextCount - 1)) / (ratioSum + ratio);
-
-    if (current.length > 0 && (current.length >= maxPerRow || nextHeight < target)) {
-      rows.push(current);
-      current = [];
-      ratioSum = 0;
-    }
-
-    current.push(image);
-    ratioSum += ratio;
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+    const count = baseCount + (rowIndex < extraImages ? 1 : 0);
+    rows.push(images.slice(cursor, cursor + count));
+    cursor += count;
   }
-  if (current.length) rows.push(current);
 
-  return rows.map((row, rowIndex) => {
+  return rows.map((row) => {
     const ratios = row.map((image) => image.width > 0 && image.height > 0 ? image.width / image.height : 1);
     const sum = ratios.reduce((total, ratio) => total + ratio, 0);
     const naturalHeight = (safeWidth - gap * (row.length - 1)) / sum;
-    const isLastRow = rowIndex === rows.length - 1;
-    const height = isLastRow && safeWidth >= 640 && row.length < 3 ? Math.min(naturalHeight, target) : naturalHeight;
+    const height = Math.min(naturalHeight, maxRowHeight(safeWidth));
     return { images: row, widths: ratios.map((ratio) => ratio * height), height };
   });
 }

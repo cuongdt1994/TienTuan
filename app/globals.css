@@ -91,6 +91,7 @@ body {
   display: grid;
   width: max-content;
   min-width: 100%;
+  justify-content: center;
 }
 
 .project-detail-row > button {
