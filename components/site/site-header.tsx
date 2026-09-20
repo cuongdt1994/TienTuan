@@ -19,7 +19,7 @@ export function SiteHeader({ name, categories }: { name: string; categories: Hea
   ];
   return (
     <header className="relative z-40 bg-paper/95 backdrop-blur-sm">
-      <div className="site-container relative flex items-center justify-between py-6 md:py-8 lg:justify-start">
+      <div className="site-wide-container relative flex min-h-[72px] items-center justify-between py-5 md:min-h-[80px] md:py-6 lg:justify-start">
         {showBrand && <Link href="/" className="font-brand text-[1.7rem] leading-none tracking-[-0.04em] md:text-[2rem] lg:absolute lg:left-1/2 lg:-translate-x-1/2">{name}</Link>}
         <nav className="hidden items-center gap-7 font-sans text-[11px] font-bold uppercase tracking-editorial text-ink lg:flex" aria-label="Primary navigation">
           {links.map(([label, href]) => <Link key={href} href={href} className="font-sans font-bold transition-colors hover:text-muted">{label}</Link>)}
@@ -29,7 +29,7 @@ export function SiteHeader({ name, categories }: { name: string; categories: Hea
         </button>
       </div>
       {open && (
-        <nav className="absolute inset-x-0 top-full border-b border-line bg-paper px-4 pb-7 pt-2 font-sans lg:hidden" aria-label="Mobile navigation">
+        <nav className="absolute inset-x-0 top-full border-b border-line bg-paper px-5 pb-7 pt-2 font-sans lg:hidden" aria-label="Mobile navigation">
           {links.map(([label, href]) => <Link onClick={() => setOpen(false)} key={href} href={href} className="block border-t border-line py-4 text-xs font-bold uppercase tracking-editorial">{label}</Link>)}
         </nav>
       )}
