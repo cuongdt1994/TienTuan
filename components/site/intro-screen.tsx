@@ -60,7 +60,7 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
               type="button"
               onClick={openPortfolio}
               disabled={entering}
-              className="mt-8 inline-flex h-12 min-w-[124px] items-center justify-center rounded-full border border-ink/70 px-7 text-[10px] uppercase tracking-editorial shadow-[0_8px_24px_rgba(23,23,22,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-ink hover:text-paper hover:shadow-[0_12px_28px_rgba(23,23,22,0.12)] disabled:opacity-50"
+              className="mt-7 inline-flex h-10 min-w-[104px] items-center justify-center rounded-full border border-ink/60 px-6 text-[9px] uppercase tracking-[0.18em] shadow-[0_5px_16px_rgba(23,23,22,0.05)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-ink hover:text-paper hover:shadow-[0_8px_20px_rgba(23,23,22,0.09)] disabled:opacity-50"
             >
               {entering ? "Opening" : "Open"}
             </button>
