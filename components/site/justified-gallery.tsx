@@ -102,7 +102,7 @@ export function JustifiedGallery({ images }: { images: LightboxImage[] }) {
                 alt={image.alt}
                 fill
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                quality={90}
+                quality={95}
                 className="object-contain transition duration-300 ease-out group-hover:scale-[1.01]"
               />
             </button>;
