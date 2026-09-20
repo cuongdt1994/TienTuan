@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Facebook, Instagram, Menu, X } from "lucide-react";
 
 type HeaderCategory = { name: string; slug: string };
 
-export function SiteHeader({ name, categories }: { name: string; categories: HeaderCategory[] }) {
+export function SiteHeader({ name, categories, facebook, instagram }: { name: string; categories: HeaderCategory[]; facebook?: string | null; instagram?: string | null }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const showBrand = pathname !== "/contact";
@@ -15,6 +15,10 @@ export function SiteHeader({ name, categories }: { name: string; categories: Hea
     ...categories.map((category) => [category.name, `/${category.slug}`] as const),
     ["Contact", "/contact"] as const,
   ];
+  const socialLinks = <>
+    {instagram && <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-ink/70 transition-colors hover:text-ink"><Instagram size={16} strokeWidth={1.6} /></a>}
+    {facebook && <a href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="text-ink/70 transition-colors hover:text-ink"><Facebook size={16} strokeWidth={1.6} /></a>}
+  </>;
   return (
     <header className="relative z-40 bg-paper/95 backdrop-blur-sm">
       <div className="site-wide-container relative flex min-h-[72px] items-center justify-between py-5 md:min-h-[80px] md:py-6 lg:justify-start">
@@ -22,9 +26,13 @@ export function SiteHeader({ name, categories }: { name: string; categories: Hea
         <nav className="hidden items-center gap-7 font-sans text-[11px] font-bold uppercase tracking-editorial text-ink lg:flex" aria-label="Primary navigation">
           {links.map(([label, href]) => <Link key={href} href={href} className="font-sans font-bold transition-colors hover:text-muted">{label}</Link>)}
         </nav>
-        <button aria-label={open ? "Close menu" : "Open menu"} className="ml-auto lg:hidden" onClick={() => setOpen(!open)}>
-          {open ? <X size={22} strokeWidth={1.3} /> : <Menu size={22} strokeWidth={1.3} />}
-        </button>
+        <div className="ml-auto hidden items-center gap-4 lg:flex" aria-label="Social links">{socialLinks}</div>
+        <div className="ml-auto flex items-center gap-4 lg:hidden">
+          <div className="flex items-center gap-3" aria-label="Social links">{socialLinks}</div>
+          <button aria-label={open ? "Close menu" : "Open menu"} className="ml-1" onClick={() => setOpen(!open)}>
+            {open ? <X size={22} strokeWidth={1.3} /> : <Menu size={22} strokeWidth={1.3} />}
+          </button>
+        </div>
       </div>
       {open && (
         <nav className="absolute inset-x-0 top-full border-b border-line bg-paper px-5 pb-7 pt-2 font-sans lg:hidden" aria-label="Mobile navigation">
