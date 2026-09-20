@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSession, verifyCredentials } from "@/lib/auth";
 import { consumeRateLimit, getClientKey, resetRateLimit } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validations";
+import { recordAudit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const rateLimitKey = `login:${getClientKey(request)}`;
@@ -20,5 +21,6 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   resetRateLimit(rateLimitKey);
   await createSession(user.id);
+  await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "LOGIN_SUCCESS", metadata: { email: user.email } });
   return NextResponse.json({ ok: true });
 }

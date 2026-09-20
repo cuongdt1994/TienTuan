@@ -9,7 +9,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const ids = body && Array.isArray(body.ids) ? body.ids : null;
   if (!ids || !ids.every((imageId: unknown) => typeof imageId === "string")) return NextResponse.json({ error: "Invalid order" }, { status: 400 });
 
-  const projectImages = await db.image.findMany({ where: { projectId }, select: { id: true } });
+  const projectImages = await db.image.findMany({ where: { projectId, deletedAt: null }, select: { id: true } });
   const knownIds = new Set(projectImages.map((image) => image.id));
   const submittedIds = new Set(ids);
   if (ids.length !== projectImages.length || submittedIds.size !== ids.length || ids.some((imageId: string) => !knownIds.has(imageId))) {

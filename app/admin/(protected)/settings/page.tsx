@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { IntroAvatarUploader } from "@/components/admin/intro-avatar-uploader";
+import { SecuritySettings } from "@/components/admin/security-settings";
 
 type Settings = {
   photographerName: string;
@@ -105,6 +106,7 @@ export default function SettingsPage() {
         </div>
         <button className="bg-ink px-5 py-3 text-[10px] uppercase tracking-editorial text-paper">{saved ? "Saved ✓" : "Save settings"}</button>
       </form>
+      <div className="mt-16"><SecuritySettings /></div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { projectSchema } from "@/lib/validations";
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
   try {
     const project = await db.$transaction(async (transaction) => {
       await transaction.project.updateMany({ data: { sortOrder: { increment: 1 } } });
-      return transaction.project.create({ data: { ...parsed.data, description: parsed.data.description || null, sortOrder: 0, publishedAt: parsed.data.status === "PUBLISHED" ? new Date() : null }, include: { category: true, images: true, coverImage: true } });
+      return transaction.project.create({ data: { ...parsed.data, description: parsed.data.description || null, previewToken: randomBytes(24).toString("base64url"), sortOrder: 0, publishedAt: parsed.data.status === "PUBLISHED" ? new Date() : null }, include: { category: true, images: true, coverImage: true } });
     });
     return NextResponse.json({ project });
   } catch (error) {

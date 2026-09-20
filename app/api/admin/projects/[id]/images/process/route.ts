@@ -11,7 +11,7 @@ export async function POST(request: Request, context: Context) {
   const { id: projectId } = await context.params;
   const { objectKey, filename, contentType } = await request.json();
   if (typeof objectKey !== "string" || typeof filename !== "string" || !String(contentType).startsWith("image/")) return NextResponse.json({ error: "Invalid upload" }, { status: 400 });
-  const project = await db.project.findUnique({ where: { id: projectId }, include: { images: true } });
+  const project = await db.project.findUnique({ where: { id: projectId }, include: { images: { where: { deletedAt: null } } } });
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
   try {
     const source = await readObject(objectKey);

@@ -8,7 +8,15 @@ const COOKIE_NAME = "atelier_session";
 const secret = new TextEncoder().encode(env.AUTH_SECRET);
 
 export async function createSession(userId: string) {
-  const token = await new SignJWT({ userId, role: "ADMIN" })
+  let authVersion = 0;
+  if (userId !== "dev-admin") {
+    const user = await db.user.findUnique({ where: { id: userId }, select: { authVersion: true } });
+    if (!user) throw new Error("User not found");
+    authVersion = user.authVersion;
+  }
+  const token = await new SignJWT({ userId, role: "ADMIN", authVersion })
+    .setIssuer("tien-tuan-admin")
+    .setAudience("tien-tuan-admin")
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("14d")
@@ -33,8 +41,13 @@ export async function getSession() {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret);
-    return { userId: String(payload.userId), role: String(payload.role) };
+    const { payload } = await jwtVerify(token, secret, { issuer: "tien-tuan-admin", audience: "tien-tuan-admin" });
+    const userId = String(payload.userId);
+    if (userId !== "dev-admin") {
+      const user = await db.user.findUnique({ where: { id: userId }, select: { role: true, authVersion: true } });
+      if (!user || user.role !== "ADMIN" || user.authVersion !== Number(payload.authVersion ?? -1)) return null;
+    }
+    return { userId, role: String(payload.role) };
   } catch {
     return null;
   }

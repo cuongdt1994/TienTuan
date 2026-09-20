@@ -5,6 +5,11 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(12).max(200),
+});
+
 export const projectSchema = z.object({
   title: z.string().min(2).max(160),
   slug: z.string().min(2).max(180).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),

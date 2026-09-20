@@ -21,6 +21,7 @@ model User {
   email        String   @unique
   passwordHash String
   role         Role     @default(ADMIN)
+  authVersion  Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -42,6 +43,7 @@ model Project {
   description  String?
   status       ProjectStatus @default(DRAFT)
   sortOrder    Int           @default(0)
+  previewToken String?       @unique
   coverImageId String?        @unique
   categoryId   String
   category     Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -67,10 +69,25 @@ model Image {
   height       Int
   alt          String?
   sortOrder    Int      @default(0)
+  deletedAt    DateTime?
   createdAt    DateTime @default(now())
   coverOf      Project? @relation("CoverImage")
 
   @@index([projectId, sortOrder])
+  @@index([deletedAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
 }
 
 model SiteSettings {

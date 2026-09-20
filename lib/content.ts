@@ -34,7 +34,7 @@ export async function getPublishedProjects(categorySlug?: string) {
   try {
     const projects = await db.project.findMany({
       where: { status: "PUBLISHED", ...(categorySlug ? { category: { slug: categorySlug } } : {}) },
-      include: { category: true, images: { take: 1, orderBy: { sortOrder: "asc" } }, coverImage: true },
+      include: { category: true, images: { where: { deletedAt: null }, take: 1, orderBy: { sortOrder: "asc" } }, coverImage: true },
       orderBy: { sortOrder: "asc" },
     });
     return projects;
@@ -59,9 +59,20 @@ export async function getProject(slug: string) {
   try {
     const project = await db.project.findFirst({
       where: { slug, status: "PUBLISHED" },
-      include: { category: true, images: { orderBy: { sortOrder: "asc" } }, coverImage: true },
+      include: { category: true, images: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } }, coverImage: true },
     });
     return project;
+  } catch {
+    return null;
+  }
+}
+
+export async function getPreviewProject(slug: string, previewToken: string) {
+  try {
+    return await db.project.findFirst({
+      where: { slug, previewToken },
+      include: { category: true, images: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } }, coverImage: true },
+    });
   } catch {
     return null;
   }
