@@ -67,9 +67,17 @@ body {
   padding-inline: clamp(24px, 3vw, 56px);
 }
 
+.project-detail-heading {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
 .project-detail-title {
   margin: 0;
-  width: 100%;
+  width: min(100%, 960px);
   color: var(--ink);
   font-family: "Times New Roman", Times, serif !important;
   font-size: clamp(2.15rem, 4.5vw, 4rem);

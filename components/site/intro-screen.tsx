@@ -43,18 +43,20 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
 
           <div className="min-w-0 animate-fade-up text-center md:text-left">
             <p className="text-[11px] uppercase tracking-editorial text-muted">{name}</p>
-            <h1 className="mt-4 whitespace-nowrap text-[clamp(3.25rem,5.8vw,5rem)] font-black uppercase leading-[0.84] tracking-[-0.08em]">Portfolio</h1>
-            <div className="mt-8 flex items-center justify-center gap-5 md:justify-start" aria-label="Social links">
+            <div className="relative mt-4 inline-block">
+              <h1 className="whitespace-nowrap text-[clamp(3.25rem,5.8vw,5rem)] font-black uppercase leading-[0.84] tracking-[-0.08em]">Portfolio</h1>
+              <div className="absolute left-[48%] top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 bg-paper px-1.5" aria-label="Social links">
               {instagram && (
-                <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="transition-opacity hover:opacity-50">
-                  <Instagram size={22} strokeWidth={1.6} />
+                <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-ink/80 transition-all duration-200 hover:scale-110 hover:text-ink">
+                  <Instagram size={15} strokeWidth={1.8} />
                 </a>
               )}
               {facebook && (
-                <a href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="transition-opacity hover:opacity-50">
-                  <Facebook size={22} strokeWidth={1.6} />
+                <a href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="text-ink/80 transition-all duration-200 hover:scale-110 hover:text-ink">
+                  <Facebook size={15} strokeWidth={1.8} />
                 </a>
               )}
+              </div>
             </div>
             <button
               type="button"
