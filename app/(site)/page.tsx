@@ -1,10 +1,20 @@
+import { cookies } from "next/headers";
 import { getPublishedProjects } from "@/lib/content";
+import { getSettings } from "@/lib/content";
 import { ProjectGrid } from "@/components/site/project-grid";
+import { IntroScreen } from "@/components/site/intro-screen";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const projects = await getPublishedProjects();
+  const [projects, settings] = await Promise.all([getPublishedProjects(), getSettings()]);
+  const introSeen = (await cookies()).get("portfolio_intro_seen")?.value === "1";
+
+  if (settings.introEnabled && !introSeen) {
+    const fallbackAvatar = settings.introAvatarUrl || projects[0]?.coverImage?.largeUrl || projects[0]?.images[0]?.largeUrl;
+    return <IntroScreen name={settings.photographerName} avatarUrl={fallbackAvatar} instagram={settings.instagram} facebook={settings.facebook} />;
+  }
+
   return <main>
     <section className="site-wide-container pb-12 pt-12 md:pb-20 md:pt-16">
       <ProjectGrid projects={projects} featured />

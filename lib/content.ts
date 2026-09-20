@@ -15,6 +15,8 @@ export const demoSettings: SiteSettings = {
   email: "tientuan1408@gmail.com",
   instagram: "https://www.instagram.com/dotientuann_",
   facebook: "https://fb.com/dotientuan09.05",
+  introEnabled: true,
+  introAvatarUrl: null,
   websiteTitle: "Tien Tuan Photography — Editorial Image Maker",
   websiteDescription: "Editorial photography for culture, fashion, and people.",
   updatedAt: new Date(),

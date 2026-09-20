@@ -20,6 +20,8 @@ export const settingsSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   instagram: z.string().max(240).optional().or(z.literal("")),
   facebook: z.string().max(240).optional().or(z.literal("")),
+  introEnabled: z.boolean().default(true),
+  introAvatarUrl: z.string().max(500).optional().or(z.literal("")),
   websiteTitle: z.string().min(2).max(160),
   websiteDescription: z.string().max(240),
 });

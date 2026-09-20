@@ -37,6 +37,7 @@ async function main() {
       email: "tientuan1408@gmail.com",
       facebook: "https://fb.com/dotientuan09.05",
       instagram: "https://www.instagram.com/dotientuann_",
+      introEnabled: true,
     },
   });
 }

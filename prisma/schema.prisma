@@ -80,6 +80,8 @@ model SiteSettings {
   email             String?
   instagram         String?
   facebook          String?
+  introEnabled      Boolean  @default(true)
+  introAvatarUrl    String?
   websiteTitle      String   @default("Tien Tuan Photography")
   websiteDescription String  @default("Editorial photography for culture, fashion, and people.")
   updatedAt         DateTime @updatedAt
