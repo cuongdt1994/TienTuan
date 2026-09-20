@@ -41,11 +41,10 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
             </div>
           </div>
 
-          <div className="min-w-0 animate-fade-up text-center md:text-left">
+          <div className="min-w-0 animate-fade-up text-center">
             <p className="text-[11px] uppercase tracking-editorial text-muted">{name}</p>
-            <div className="relative mt-4 inline-block">
-              <h1 className="whitespace-nowrap text-[clamp(3.25rem,5.8vw,5rem)] font-black uppercase leading-[0.84] tracking-[-0.08em]">Portfolio</h1>
-              <div className="absolute left-[48%] top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 bg-paper px-1.5" aria-label="Social links">
+            <h1 className="mt-4 whitespace-nowrap text-[clamp(3.25rem,5.8vw,5rem)] font-black uppercase leading-[0.84] tracking-[-0.08em]">Portfolio</h1>
+            {(instagram || facebook) && <div className="mt-5 flex items-center justify-center gap-4" aria-label="Social links">
               {instagram && (
                 <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-ink/80 transition-all duration-200 hover:scale-110 hover:text-ink">
                   <Instagram size={15} strokeWidth={1.8} />
@@ -56,13 +55,12 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
                   <Facebook size={15} strokeWidth={1.8} />
                 </a>
               )}
-              </div>
-            </div>
+            </div>}
             <button
               type="button"
               onClick={openPortfolio}
               disabled={entering}
-              className="mt-7 inline-flex h-10 min-w-[104px] items-center justify-center rounded-full border border-ink/60 px-6 text-[9px] uppercase tracking-[0.18em] shadow-[0_5px_16px_rgba(23,23,22,0.05)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-ink hover:text-paper hover:shadow-[0_8px_20px_rgba(23,23,22,0.09)] disabled:opacity-50"
+              className="mt-6 inline-flex h-10 min-w-[104px] items-center justify-center rounded-full border border-ink/60 px-6 text-[9px] uppercase tracking-[0.18em] shadow-[0_5px_16px_rgba(23,23,22,0.05)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-ink hover:text-paper hover:shadow-[0_8px_20px_rgba(23,23,22,0.09)] disabled:opacity-50"
             >
               {entering ? "Opening" : "Open"}
             </button>
