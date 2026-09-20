@@ -67,10 +67,6 @@ body {
   padding-inline: clamp(24px, 3vw, 56px);
 }
 
-.site-footer {
-  min-width: 0;
-}
-
 .project-detail-gallery {
   grid-template-columns: minmax(0, 1fr);
 }

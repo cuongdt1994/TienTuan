@@ -12,9 +12,7 @@ export function SiteHeader({ name, categories }: { name: string; categories: Hea
   const pathname = usePathname();
   const showBrand = pathname !== "/contact";
   const links = [
-    ...categories
-      .filter((category) => ["commercial", "beauty", "portrait"].includes(category.slug))
-      .map((category) => [category.name, `/${category.slug}`] as const),
+    ...categories.map((category) => [category.name, `/${category.slug}`] as const),
     ["Contact", "/contact"] as const,
   ];
   return (
