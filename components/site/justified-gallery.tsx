@@ -14,7 +14,7 @@ export function JustifiedGallery({ images }: { images: LightboxImage[] }) {
   }
 
   return <>
-    <div className="mx-auto grid w-full grid-cols-1 gap-x-4 gap-y-14 md:grid-cols-2 md:gap-x-6 md:gap-y-20 lg:grid-cols-3">
+    <div className="project-detail-gallery mx-auto grid w-full max-w-[1120px] gap-4 lg:gap-5" style={galleryStyle}>
       {images.map((image, index) => <button key={`${image.src}-${index}`} type="button" onClick={() => setActive(index)} className="group relative aspect-[3/4] w-full overflow-hidden bg-paper text-left" aria-label={`Open ${image.alt}`}>
         <Image
           src={image.thumbnailSrc ?? image.src}
