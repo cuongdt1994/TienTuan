@@ -57,14 +57,14 @@ export default async function ContactPage() {
               {settings.instagram && (
                 <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="contact-item contact-link">
                   <Instagram size={20} strokeWidth={1.8} aria-hidden="true" />
-                  <span>Instagram ↗</span>
+                  <span>Instagram</span>
                 </a>
               )}
 
               {settings.facebook && (
                 <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="contact-item contact-link">
                   <Facebook size={20} strokeWidth={1.8} aria-hidden="true" />
-                  <span>Facebook ↗</span>
+                  <span>Facebook</span>
                 </a>
               )}
             </div>

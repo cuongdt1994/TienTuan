@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Facebook, Instagram, ArrowUpRight } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 import { useState } from "react";
 
 type IntroScreenProps = {
@@ -60,10 +60,9 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
               type="button"
               onClick={openPortfolio}
               disabled={entering}
-              className="mt-8 inline-flex items-center gap-3 border-b border-ink pb-2 text-[11px] uppercase tracking-editorial transition-opacity hover:opacity-50 disabled:opacity-50"
+              className="mt-8 inline-flex h-16 w-16 items-center justify-center rounded-full border border-ink text-[10px] uppercase tracking-editorial transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
             >
               {entering ? "Opening" : "Open"}
-              <ArrowUpRight size={15} strokeWidth={1.5} />
             </button>
           </div>
         </div>
