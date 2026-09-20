@@ -16,8 +16,8 @@ export default async function ContactPage() {
   const settings = await getSettings();
 
   return (
-    <main className="flex min-h-[calc(100svh-120px)] w-full items-center justify-center px-6 py-10 md:px-10 md:py-12">
-      <div className="mx-auto w-full max-w-[1100px] -translate-y-8 md:-translate-y-12">
+    <main className="site-container flex min-h-[calc(100svh-120px)] items-center justify-center py-10 md:py-12">
+      <div className="w-full -translate-y-8 md:-translate-y-12">
         {/* Title */}
         <header className="text-center">
           <h1 className="font-sans text-[52px] font-normal leading-[0.95] tracking-[-0.06em] sm:text-[64px] md:text-[82px] lg:text-[92px]">

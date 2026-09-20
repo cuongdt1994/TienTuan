@@ -2,7 +2,7 @@ import { ScrollToTop } from "@/components/site/scroll-to-top";
 
 export function SiteFooter({ name, email, instagram }: { name: string; email?: string | null; instagram?: string | null }) {
   return (
-    <footer className="mx-auto max-w-[1600px] px-5 pb-8 pt-24 md:px-10 md:pt-36">
+    <footer className="site-container pb-8 pt-24 md:pt-36">
       <div className="editorial-rule flex flex-col justify-between gap-10 pt-5 text-[10px] uppercase tracking-editorial text-muted md:flex-row">
         <span>© {new Date().getFullYear()} <span className="font-brand">{name}</span></span>
         <div className="flex gap-6">
