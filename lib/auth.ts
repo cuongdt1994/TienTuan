@@ -41,7 +41,8 @@ export async function getSession() {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret, { issuer: "tien-tuan-admin", audience: "tien-tuan-admin" });
+    // Keep sessions issued before the security upgrade valid when their authVersion is still current.
+    const { payload } = await jwtVerify(token, secret);
     const userId = String(payload.userId);
     if (userId !== "dev-admin") {
       const user = await db.user.findUnique({ where: { id: userId }, select: { role: true, authVersion: true } });

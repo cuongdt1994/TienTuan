@@ -16,6 +16,8 @@ export const projectSchema = z.object({
   description: z.string().max(1000).optional().or(z.literal("")),
   categoryId: z.string().min(1),
   status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
+  coverPositionX: z.number().int().min(0).max(100).optional(),
+  coverPositionY: z.number().int().min(0).max(100).optional(),
 });
 
 export const settingsSchema = z.object({

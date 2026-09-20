@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderKanban, Tags, Images, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Tags, Settings, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const nav = [
   ["Dashboard", "/admin", LayoutDashboard],
   ["Projects", "/admin/projects", FolderKanban],
   ["Categories", "/admin/categories", Tags],
-  ["Media", "/admin/media", Images],
   ["Settings", "/admin/settings", Settings],
 ] as const;
 

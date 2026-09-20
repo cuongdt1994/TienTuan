@@ -17,6 +17,7 @@ export function ProjectCard({ project, priority = false, index = 0, aspectRatio 
           quality={95}
           sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
           className="object-cover transition duration-700 ease-out group-hover:scale-[1.025]"
+          style={{ objectPosition: `${project.coverPositionX}% ${project.coverPositionY}%` }}
         />
         <div className="absolute inset-0 flex items-center justify-center bg-ink/65 opacity-100 transition-opacity duration-500 md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100">
           <div className="text-center text-[11px] font-medium uppercase tracking-editorial text-white">

@@ -45,6 +45,8 @@ model Project {
   sortOrder    Int           @default(0)
   previewToken String?       @unique
   coverImageId String?        @unique
+  coverPositionX Int          @default(50)
+  coverPositionY Int          @default(50)
   categoryId   String
   category     Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   images       Image[]
