@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { IntroAvatarUploader } from "@/components/admin/intro-avatar-uploader";
 
 type Settings = {
   photographerName: string;
@@ -35,7 +36,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetch("/api/admin/settings")
       .then((response) => response.json())
-      .then((data) => setSettings({ ...empty, ...(data.settings ?? {}) }));
+      .then((data) => setSettings({ ...empty, ...(data.settings ?? {}), introAvatarUrl: data.settings?.introAvatarUrl ?? "" }));
   }, []);
 
   async function submit(event: FormEvent) {
@@ -93,8 +94,9 @@ export default function SettingsPage() {
               <span className="mt-1 block text-xs font-normal text-muted">Visitors will see your avatar, Portfolio title, social links, and Open button first.</span>
             </span>
           </label>
-          <div className="mt-8">{field("introAvatarUrl", "Intro avatar URL (optional)")}</div>
-          <p className="mt-2 text-xs font-normal text-muted">Leave empty to use the cover image of the first published project.</p>
+          <div className="mt-8">
+            <IntroAvatarUploader value={settings.introAvatarUrl} onChange={(introAvatarUrl) => setSettings({ ...settings, introAvatarUrl })} />
+          </div>
         </div>
 
         <div className="grid gap-8 border-t border-line pt-8">

@@ -21,10 +21,10 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
   }
 
   return (
-    <main className="fixed inset-0 z-[100] overflow-y-auto bg-paper text-ink">
-      <div className="mx-auto flex min-h-svh w-full max-w-[1440px] items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
-        <div className="grid w-full max-w-[980px] items-center gap-12 md:grid-cols-[minmax(280px,0.9fr)_minmax(320px,1.1fr)] md:gap-16 lg:gap-24">
-          <div className="mx-auto w-full max-w-[420px] animate-fade-in">
+    <main className="fixed inset-0 z-[100] overflow-x-hidden overflow-y-auto bg-paper text-ink">
+      <div className="mx-auto flex min-h-svh w-full max-w-[1440px] items-center justify-center px-6 py-10 sm:px-10 lg:px-16">
+        <div className="grid w-full max-w-[920px] items-center gap-10 md:grid-cols-[minmax(220px,300px)_minmax(0,1fr)] md:gap-14 lg:gap-16">
+          <div className="mx-auto w-full max-w-[230px] animate-fade-in md:max-w-[300px]">
             <div className="relative aspect-square overflow-hidden rounded-full bg-fog">
               {avatarUrl ? (
                 <Image
@@ -41,10 +41,10 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
             </div>
           </div>
 
-          <div className="animate-fade-up text-center md:text-left">
+          <div className="min-w-0 animate-fade-up text-center md:text-left">
             <p className="text-[11px] uppercase tracking-editorial text-muted">{name}</p>
-            <h1 className="mt-5 text-[clamp(4rem,11vw,9rem)] font-black uppercase leading-[0.82] tracking-[-0.08em]">Portfolio</h1>
-            <div className="mt-10 flex items-center justify-center gap-5 md:justify-start" aria-label="Social links">
+            <h1 className="mt-4 whitespace-nowrap text-[clamp(3.25rem,5.8vw,5rem)] font-black uppercase leading-[0.84] tracking-[-0.08em]">Portfolio</h1>
+            <div className="mt-8 flex items-center justify-center gap-5 md:justify-start" aria-label="Social links">
               {instagram && (
                 <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="transition-opacity hover:opacity-50">
                   <Instagram size={22} strokeWidth={1.6} />
@@ -60,7 +60,7 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
               type="button"
               onClick={openPortfolio}
               disabled={entering}
-              className="mt-10 inline-flex items-center gap-3 border-b border-ink pb-2 text-[11px] uppercase tracking-editorial transition-opacity hover:opacity-50 disabled:opacity-50"
+              className="mt-8 inline-flex items-center gap-3 border-b border-ink pb-2 text-[11px] uppercase tracking-editorial transition-opacity hover:opacity-50 disabled:opacity-50"
             >
               {entering ? "Opening" : "Open"}
               <ArrowUpRight size={15} strokeWidth={1.5} />

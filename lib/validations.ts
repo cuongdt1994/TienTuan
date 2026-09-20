@@ -31,3 +31,9 @@ export const uploadSchema = z.object({
   contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/avif"]),
   size: z.number().int().positive().max(50 * 1024 * 1024),
 });
+
+export const avatarProcessSchema = z.object({
+  objectKey: z.string().startsWith("originals/").max(500),
+  filename: z.string().min(1).max(240),
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/avif"]),
+});
