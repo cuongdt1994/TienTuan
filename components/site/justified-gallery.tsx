@@ -21,11 +21,19 @@ function targetRowHeight(width: number) {
   return Math.min(340, Math.max(240, width / 4.2));
 }
 
+function maxImagesPerRow(width: number) {
+  if (width < 640) return 1;
+  if (width < 1024) return 4;
+  if (width < 1440) return 5;
+  return 6;
+}
+
 function createRows(images: LightboxImage[], width: number): GalleryRow[] {
   if (!images.length) return [];
   const safeWidth = Math.max(width, 320);
   const gap = galleryGap(safeWidth);
   const target = targetRowHeight(safeWidth);
+  const maxPerRow = maxImagesPerRow(safeWidth);
   const rows: LightboxImage[][] = [];
   let current: LightboxImage[] = [];
   let ratioSum = 0;
@@ -35,7 +43,7 @@ function createRows(images: LightboxImage[], width: number): GalleryRow[] {
     const nextCount = current.length + 1;
     const nextHeight = (safeWidth - gap * (nextCount - 1)) / (ratioSum + ratio);
 
-    if (current.length > 0 && nextHeight < target) {
+    if (current.length > 0 && (current.length >= maxPerRow || nextHeight < target)) {
       rows.push(current);
       current = [];
       ratioSum = 0;
@@ -51,7 +59,7 @@ function createRows(images: LightboxImage[], width: number): GalleryRow[] {
     const sum = ratios.reduce((total, ratio) => total + ratio, 0);
     const naturalHeight = (safeWidth - gap * (row.length - 1)) / sum;
     const isLastRow = rowIndex === rows.length - 1;
-    const height = isLastRow && safeWidth >= 640 ? Math.min(naturalHeight, target) : naturalHeight;
+    const height = isLastRow && safeWidth >= 640 && row.length < 3 ? Math.min(naturalHeight, target) : naturalHeight;
     return { images: row, widths: ratios.map((ratio) => ratio * height), height };
   });
 }
