@@ -4,7 +4,7 @@ import { useState } from "react";
 import { UploadCloud, X, GripVertical, LoaderCircle, CheckCircle2 } from "lucide-react";
 
 type UploadItem = { id: string; name: string; preview: string; progress: number; status: "ready" | "uploading" | "done" | "error" };
-type UploadedImage = { id: string; thumbnailUrl: string; alt: string | null; sortOrder: number };
+type UploadedImage = { id: string; thumbnailUrl: string; alt: string | null; sortOrder: number; width: number; height: number };
 
 export function ProjectUploader({ projectId, onUploaded }: { projectId: string; onUploaded?: (image: UploadedImage) => void }) {
   const [items, setItems] = useState<UploadItem[]>([]);
