@@ -51,7 +51,7 @@ function createRows(images: LightboxImage[], width: number): GalleryRow[] {
     const ratios = row.map((image) => image.width > 0 && image.height > 0 ? image.width / image.height : 1);
     const sum = ratios.reduce((total, ratio) => total + ratio, 0);
     const naturalHeight = (safeWidth - gap * (row.length - 1)) / sum;
-    const height = Math.min(naturalHeight, maxRowHeight(safeWidth));
+    const height = row.length >= 3 ? Math.min(naturalHeight, maxRowHeight(safeWidth)) : naturalHeight;
     return { images: row, widths: ratios.map((ratio) => ratio * height), height };
   });
 }
