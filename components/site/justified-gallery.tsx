@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Lightbox, type LightboxImage } from "@/components/site/lightbox";
 
 export function JustifiedGallery({ images }: { images: LightboxImage[] }) {
   const [active, setActive] = useState<number | null>(null);
+  const desktopColumns = images.length < 3 ? images.length : Math.ceil(images.length / 2);
+  const galleryStyle = { "--gallery-columns": desktopColumns } as CSSProperties & { "--gallery-columns": number };
 
   function move(direction: number) {
     setActive((current) => current === null ? null : (current + direction + images.length) % images.length);
