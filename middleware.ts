@@ -1,6 +1,25 @@
 import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 
+function isAllowedAdminOrigin(request: NextRequest, origin: string) {
+  try {
+    const originUrl = new URL(origin);
+    if (originUrl.protocol !== "http:" && originUrl.protocol !== "https:") return false;
+    const configuredHost = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : null;
+    const requestHosts = [
+      request.headers.get("host"),
+      request.headers.get("x-forwarded-host"),
+      request.nextUrl.host,
+      configuredHost,
+    ]
+      .flatMap((value) => value?.split(",").map((item) => item.trim()) ?? [])
+      .filter(Boolean);
+    return requestHosts.includes(originUrl.host);
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAdminPage = pathname.startsWith("/admin");
@@ -9,7 +28,7 @@ export async function middleware(request: NextRequest) {
 
   if (request.method !== "GET" && request.method !== "HEAD") {
     const origin = request.headers.get("origin");
-    if (origin && origin !== request.nextUrl.origin) {
+    if (origin && !isAllowedAdminOrigin(request, origin)) {
       return isAdminApi ? NextResponse.json({ error: "Forbidden" }, { status: 403 }) : NextResponse.redirect(new URL("/admin/login", request.url));
     }
   }
