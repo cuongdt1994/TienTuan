@@ -35,7 +35,13 @@ export async function readObject(key: string) {
 }
 
 export async function putObject(key: string, body: Buffer, contentType: string) {
-  await s3.send(new PutObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key, Body: body, ContentType: contentType }));
+  await s3.send(new PutObjectCommand({
+    Bucket: env.MINIO_BUCKET,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+    CacheControl: "public, max-age=31536000, immutable",
+  }));
   return objectUrl(key);
 }
 

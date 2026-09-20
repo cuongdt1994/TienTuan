@@ -34,10 +34,22 @@ export async function getPublishedProjects(categorySlug?: string) {
   try {
     const projects = await db.project.findMany({
       where: { status: "PUBLISHED", ...(categorySlug ? { category: { slug: categorySlug } } : {}) },
-      include: { category: true, images: { orderBy: { sortOrder: "asc" } }, coverImage: true },
+      include: { category: true, images: { take: 1, orderBy: { sortOrder: "asc" } }, coverImage: true },
       orderBy: { sortOrder: "asc" },
     });
     return projects;
+  } catch {
+    return [];
+  }
+}
+
+export async function getPublishedProjectSlugs() {
+  try {
+    return await db.project.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true, updatedAt: true },
+      orderBy: { sortOrder: "asc" },
+    });
   } catch {
     return [];
   }

@@ -68,7 +68,7 @@ export async function verifyCredentials(email: string, password: string) {
     // During local development the database may not be running yet.
   }
 
-  const devLoginAllowed = process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_LOGIN === "true" || !process.env.AUTH_SECRET;
+  const devLoginAllowed = process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_LOGIN === "true";
   if (devLoginAllowed && email.toLowerCase() === (process.env.ADMIN_EMAIL ?? "admin@example.com").toLowerCase() && password === (process.env.ADMIN_PASSWORD ?? "change-me-before-production")) {
     return {
       id: "dev-admin",
