@@ -10,10 +10,11 @@ export function ProjectCard({ project, priority = false, index = 0, aspectRatio 
     <Link href={`/${project.slug}` as Route} className={`group block animate-fade-up [animation-delay:${Math.min(index * 90, 540)}ms]`}>
       <div className="relative aspect-[4/3] overflow-hidden bg-fog" style={aspectRatio ? { aspectRatio } : undefined}>
         <Image
-          src={image.mediumUrl}
+          src={image.largeUrl}
           alt={image.alt ?? `${project.title} cover`}
           fill
           priority={priority}
+          quality={90}
           sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
           className="object-cover transition duration-700 ease-out group-hover:scale-[1.025]"
         />

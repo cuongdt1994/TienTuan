@@ -1,8 +1,48 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 type Category = { id: string; name: string; slug: string; _count?: { projects: number } };
+
+function SortableCategoryRow({ category, editingId, editingName, onBeginEdit, onNameChange, onSave, onCancel, onDelete }: {
+  category: Category;
+  editingId: string | null;
+  editingName: string;
+  onBeginEdit: (category: Category) => void;
+  onNameChange: (name: string) => void;
+  onSave: (event: FormEvent) => void;
+  onCancel: () => void;
+  onDelete: (category: Category) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id });
+  const isEditing = editingId === category.id;
+
+  return <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="border-b border-line bg-paper py-4">
+    <div className="flex flex-wrap items-center gap-4">
+      <button {...attributes} {...listeners} type="button" className="cursor-grab touch-none text-muted active:cursor-grabbing" aria-label={`Reorder ${category.name}`}>
+        <GripVertical size={16} />
+      </button>
+      {isEditing ? <form onSubmit={onSave} className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+        <input required autoFocus value={editingName} onChange={(event) => onNameChange(event.target.value)} className="min-w-0 flex-1 border-b border-ink bg-transparent py-2 text-sm outline-none" />
+        <button type="submit" className="bg-ink px-4 py-2 text-[10px] uppercase tracking-editorial text-paper">Save</button>
+        <button type="button" onClick={onCancel} className="px-2 py-2 text-[10px] uppercase tracking-editorial text-muted">Cancel</button>
+      </form> : <>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm">{category.name}</p>
+          <p className="mt-1 text-xs text-muted">/{category.slug} · {category._count?.projects ?? 0} project{category._count?.projects === 1 ? "" : "s"}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <button type="button" onClick={() => onBeginEdit(category)} className="text-[10px] uppercase tracking-editorial text-muted hover:text-ink">Edit</button>
+          <button type="button" onClick={() => onDelete(category)} className="text-[10px] uppercase tracking-editorial text-red-600 hover:text-red-800">Delete</button>
+        </div>
+      </>}
+    </div>
+  </div>;
+}
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -10,6 +50,7 @@ export default function CategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [error, setError] = useState("");
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   async function load() {
     const response = await fetch("/api/admin/categories");
@@ -18,6 +59,23 @@ export default function CategoriesPage() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function reorder(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = categories.findIndex((category) => category.id === active.id);
+    const newIndex = categories.findIndex((category) => category.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = [...categories];
+    const [moved] = next.splice(oldIndex, 1);
+    next.splice(newIndex, 0, moved);
+    setCategories(next);
+    const response = await fetch("/api/admin/categories/reorder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: next.map((category) => category.id) }) });
+    if (!response.ok) {
+      setError("Could not save category order.");
+      load();
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -73,23 +131,12 @@ export default function CategoriesPage() {
       <button className="bg-ink px-5 py-3 text-[10px] uppercase tracking-editorial text-paper">Add</button>
     </form>
     {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
-    <div className="mt-14 max-w-3xl divide-y divide-line border-t border-line">
-      {categories.map((category) => <div key={category.id} className="py-4">
-        {editingId === category.id ? <form onSubmit={saveEdit} className="flex flex-wrap items-center gap-3">
-          <input required autoFocus value={editingName} onChange={(event) => setEditingName(event.target.value)} className="min-w-0 flex-1 border-b border-ink bg-transparent py-2 text-sm outline-none" />
-          <button type="submit" className="bg-ink px-4 py-2 text-[10px] uppercase tracking-editorial text-paper">Save</button>
-          <button type="button" onClick={() => setEditingId(null)} className="px-2 py-2 text-[10px] uppercase tracking-editorial text-muted">Cancel</button>
-        </form> : <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm">{category.name}</p>
-            <p className="mt-1 text-xs text-muted">/{category.slug} · {category._count?.projects ?? 0} project{category._count?.projects === 1 ? "" : "s"}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <button type="button" onClick={() => beginEdit(category)} className="text-[10px] uppercase tracking-editorial text-muted hover:text-ink">Edit</button>
-            <button type="button" onClick={() => deleteCategory(category)} className="text-[10px] uppercase tracking-editorial text-red-600 hover:text-red-800">Delete</button>
-          </div>
-        </div>}
-      </div>)}
-    </div>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorder}>
+      <SortableContext items={categories.map((category) => category.id)} strategy={verticalListSortingStrategy}>
+        <div className="mt-14 max-w-3xl border-t border-line">
+          {categories.map((category) => <SortableCategoryRow key={category.id} category={category} editingId={editingId} editingName={editingName} onBeginEdit={beginEdit} onNameChange={setEditingName} onSave={saveEdit} onCancel={() => setEditingId(null)} onDelete={deleteCategory} />)}
+        </div>
+      </SortableContext>
+    </DndContext>
   </div>;
 }
