@@ -14,7 +14,6 @@ export function ProjectCard({ project, priority = false, index = 0, aspectRatio 
           src={browserImageUrl(image.originalUrl)}
           alt={image.alt ?? `${project.title} cover`}
           fill
-          unoptimized
           priority={priority}
           quality={95}
           sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"

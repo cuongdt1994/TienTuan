@@ -4,6 +4,6 @@ import { ProjectCard } from "@/components/site/project-card";
 export function ProjectGrid({ projects, compact = false }: { projects: ProjectWithMedia[]; compact?: boolean }) {
   if (!projects.length) return <div className="py-24 text-center text-sm text-muted">No projects yet.</div>;
   return <div className={compact ? "grid gap-x-3 gap-y-10 sm:grid-cols-2 md:gap-4 lg:grid-cols-4" : "grid gap-x-4 gap-y-14 md:grid-cols-2 md:gap-x-6 md:gap-y-20 lg:grid-cols-3"}>
-    {projects.map((project, index) => <ProjectCard key={project.id} project={project} priority={index < 3} index={index} aspectRatio="3 / 4" />)}
+    {projects.map((project, index) => <ProjectCard key={project.id} project={project} priority={index < 2} index={index} aspectRatio="3 / 4" />)}
   </div>;
 }
