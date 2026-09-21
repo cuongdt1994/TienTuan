@@ -1,9 +1,11 @@
 node_modules
 .next
+generated
 .git
-.env
-.env.*
-!.env.example
-npm-debug.log*
+.env*
+*.log
+coverage
+tsconfig.tsbuildinfo
 Dockerfile*
 docker-compose*.yml
+README.md
