@@ -3,8 +3,10 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { imagePatchSchema } from "@/lib/validations";
+import { isSameOrigin } from "@/lib/request-security";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;
@@ -14,10 +16,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   if (!image) return NextResponse.json({ error: "Image not found" }, { status: 404 });
   if (body.data.cover) await db.project.update({ where: { id: image.projectId }, data: { coverImageId: image.id } });
   const updated = await db.image.update({ where: { id }, data: { ...(body.data.alt !== undefined ? { alt: body.data.alt } : {}) } });
+  await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: body.data.cover ? "IMAGE_SET_AS_COVER" : "IMAGE_UPDATED", entityType: "Image", entityId: id, metadata: { projectId: image.projectId } });
   return NextResponse.json({ image: updated });
 }
 
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(_request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;

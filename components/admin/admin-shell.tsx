@@ -17,7 +17,7 @@ export function AdminShell({ children, email }: { children: React.ReactNode; ema
   const router = useRouter();
   const [open, setOpen] = useState(false);
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); router.replace("/admin/login"); }
-  return <div className="min-h-screen bg-paper text-ink">
+  return <div className="admin-shell min-h-screen bg-paper text-ink">
     <button onClick={() => setOpen(!open)} className="fixed right-5 top-5 z-50 rounded-full bg-ink p-3 text-paper lg:hidden" aria-label="Toggle admin navigation">{open ? <X size={18} /> : <Menu size={18} />}</button>
     <aside className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-line bg-paper px-7 py-8 transition-transform lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
       <Link href="/admin" className="font-sans text-2xl font-medium tracking-[-0.04em]">Tien Tuan / Admin</Link>

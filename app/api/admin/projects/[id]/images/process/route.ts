@@ -6,11 +6,15 @@ import { requireAdmin } from "@/lib/auth";
 import { deleteObjectUrls, objectUrl, putObject, readObject } from "@/lib/minio";
 import { consumeRateLimit, getClientKey } from "@/lib/rate-limit";
 import { imageProcessSchema, MAX_IMAGE_PIXELS, MAX_UPLOAD_BYTES } from "@/lib/validations";
+import { recordAudit } from "@/lib/audit";
+import { isSameOrigin } from "@/lib/request-security";
 
 type Context = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: Context) {
-  if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+  const user = await requireAdmin();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const rateLimit = consumeRateLimit(`image-process:${getClientKey(request)}`, 40, 60 * 1000);
   if (!rateLimit.allowed) return NextResponse.json({ error: "Too many image processing requests. Try again later." }, { status: 429, headers: { "Retry-After": String(rateLimit.retryAfter) } });
   const { id: projectId } = await context.params;
@@ -23,13 +27,20 @@ export async function POST(request: Request, context: Context) {
   try {
     const source = await readObject(objectKey);
     if (!source.Body) throw new Error("Missing object body");
-    if (typeof source.ContentLength === "number" && source.ContentLength > MAX_UPLOAD_BYTES) return NextResponse.json({ error: "Image is too large" }, { status: 413 });
+    if (typeof source.ContentLength === "number" && source.ContentLength > MAX_UPLOAD_BYTES) {
+      await deleteObjectUrls([objectUrl(objectKey)]).catch(() => undefined);
+      return NextResponse.json({ error: "Image is too large" }, { status: 413 });
+    }
     const original = Buffer.from(await source.Body.transformToByteArray());
-    if (original.byteLength > MAX_UPLOAD_BYTES) return NextResponse.json({ error: "Image is too large" }, { status: 413 });
+    if (original.byteLength > MAX_UPLOAD_BYTES) {
+      await deleteObjectUrls([objectUrl(objectKey)]).catch(() => undefined);
+      return NextResponse.json({ error: "Image is too large" }, { status: 413 });
+    }
     const base = `projects/${project.slug}/${randomUUID()}-${filename.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 180)}`;
     const normalized = sharp(original, { limitInputPixels: MAX_IMAGE_PIXELS }).rotate();
     const metadata = await normalized.metadata();
     if (!metadata.width || !metadata.height || !metadata.format || !["jpeg", "png", "webp", "avif"].includes(metadata.format)) {
+      await deleteObjectUrls([objectUrl(objectKey)]).catch(() => undefined);
       return NextResponse.json({ error: "Unsupported or invalid image" }, { status: 400 });
     }
     const width = metadata.width;
@@ -47,9 +58,11 @@ export async function POST(request: Request, context: Context) {
     createdUrls.push(thumbnailUrl);
     const image = await db.image.create({ data: { projectId, originalUrl: objectUrl(objectKey), largeUrl, mediumUrl, thumbnailUrl, width, height, sortOrder: project.images.length, alt: `${project.title} - Photo ${String(project.images.length + 1).padStart(2, "0")}` } });
     if (!project.coverImageId) await db.project.update({ where: { id: projectId }, data: { coverImageId: image.id } });
+    await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "IMAGE_UPLOADED", entityType: "Image", entityId: image.id, metadata: { projectId, filename } });
     return NextResponse.json({ image });
   } catch (error) {
     if (createdUrls.length) await deleteObjectUrls(createdUrls).catch(() => undefined);
+    await deleteObjectUrls([objectUrl(objectKey)]).catch(() => undefined);
     console.error("Image processing failed", error);
     return NextResponse.json({ error: "Image processing failed" }, { status: 500 });
   }

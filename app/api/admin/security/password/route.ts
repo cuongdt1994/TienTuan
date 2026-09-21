@@ -5,8 +5,10 @@ import { requireAdmin, clearSession } from "@/lib/auth";
 import { passwordChangeSchema } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { consumeRateLimit, getClientKey } from "@/lib/rate-limit";
+import { isSameOrigin } from "@/lib/request-security";
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const rateLimit = consumeRateLimit(`password-change:${getClientKey(request)}`, 5, 15 * 60 * 1000);

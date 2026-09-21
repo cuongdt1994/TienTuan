@@ -1,6 +1,6 @@
 import "server-only";
+import type { Readable } from "node:stream";
 import { CreateBucketCommand, DeleteObjectsCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
 
 export const s3 = new S3Client({
@@ -23,24 +23,17 @@ export function objectUrl(key: string) {
   return `${env.MINIO_USE_SSL ? "https" : "http"}://${env.MINIO_ENDPOINT}:${env.MINIO_PORT}/${env.MINIO_BUCKET}/${key}`;
 }
 
-export async function createUploadUrl(key: string, contentType: string, size?: number) {
-  return getSignedUrl(
-    s3,
-    new PutObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key, ContentType: contentType, ...(size ? { ContentLength: size } : {}) }),
-    { expiresIn: 900 },
-  );
-}
-
 export async function readObject(key: string) {
   return s3.send(new GetObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key }));
 }
 
-export async function putObject(key: string, body: Buffer, contentType: string) {
+export async function putObject(key: string, body: Buffer | Readable, contentType: string, size?: number) {
   await s3.send(new PutObjectCommand({
     Bucket: env.MINIO_BUCKET,
     Key: key,
     Body: body,
     ContentType: contentType,
+    ...(size ? { ContentLength: size } : {}),
     CacheControl: "public, max-age=31536000, immutable",
   }));
   return objectUrl(key);

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { CircleUserRound, LoaderCircle, Trash2, UploadCloud } from "lucide-react";
 import { browserImageUrl } from "@/lib/media-url";
+import { uploadAdminFile } from "@/components/admin/upload-client";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
@@ -23,22 +24,8 @@ export function IntroAvatarUploader({ value, onChange }: { value: string; onChan
     setBusy(true);
     setProgress(0);
     try {
-      const presignResponse = await fetch("/api/admin/upload/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }),
-      });
-      if (!presignResponse.ok) throw new Error("Could not prepare upload");
-      const { uploadUrl, objectKey } = await presignResponse.json();
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.upload.onprogress = (event) => event.lengthComputable && setProgress(Math.round((event.loaded / event.total) * 80));
-        xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("MinIO upload failed"));
-        xhr.onerror = () => reject(new Error("MinIO upload failed"));
-        xhr.send(file);
-      });
+      const { objectKey } = await uploadAdminFile(file, setProgress);
+      setProgress(85);
       const processResponse = await fetch("/api/admin/settings/avatar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

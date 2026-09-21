@@ -1,6 +1,7 @@
 import "server-only";
 import type { Category, Image, Project, SiteSettings } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { isPreviewTokenFresh } from "@/lib/preview-token";
 
 export type ProjectWithMedia = Project & {
   category: Category;
@@ -69,6 +70,7 @@ export async function getProject(slug: string) {
 }
 
 export async function getPreviewProject(slug: string, previewToken: string) {
+  if (!isPreviewTokenFresh(previewToken)) return null;
   try {
     return await db.project.findFirst({
       where: { slug, previewToken },

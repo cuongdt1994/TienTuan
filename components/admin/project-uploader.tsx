@@ -1,17 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2, GripVertical, LoaderCircle, Pause, Play, RotateCcw, UploadCloud, X } from "lucide-react";
 import { browserImageUrl } from "@/lib/media-url";
+import { uploadAdminFile } from "@/components/admin/upload-client";
 
-type UploadStatus = "ready" | "uploading" | "done" | "error";
+type UploadStatus = "ready" | "uploading" | "processing" | "done" | "error";
 type UploadItem = { id: string; name: string; file: File; preview: string; progress: number; status: UploadStatus; attempts: number; error?: string };
 type UploadedImage = { id: string; thumbnailUrl: string; alt: string | null; sortOrder: number; width: number; height: number };
 
 // Local uploads can safely keep a larger batch moving at once. The queue still
 // preserves retry, pause/resume, cancellation, and per-file progress states.
-const MAX_CONCURRENCY = 20;
+const MAX_CONCURRENCY = 3;
 const MAX_ATTEMPTS = 3;
 
 export function ProjectUploader({ projectId, onUploaded }: { projectId: string; onUploaded?: (image: UploadedImage) => void }) {
@@ -23,7 +24,12 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
   const runningRef = useRef(0);
   const pausedRef = useRef(false);
   const cancelledRef = useRef(new Set<string>());
-  const xhrRef = useRef(new Map<string, XMLHttpRequest>());
+  const abortRef = useRef(new Map<string, AbortController>());
+
+  useEffect(() => () => {
+    for (const item of itemsRef.current) URL.revokeObjectURL(item.preview);
+    for (const controller of abortRef.current.values()) controller.abort();
+  }, []);
 
   function updateItem(id: string, patch: Partial<UploadItem>) {
     setItems((current) => {
@@ -38,20 +44,11 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
   }
 
   async function uploadOnce(file: File, itemId: string) {
-    const presignResponse = await fetch("/api/admin/upload/presign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }) });
-    if (!presignResponse.ok) throw new Error("Could not prepare upload");
-    const { uploadUrl, objectKey } = await presignResponse.json();
-    await new Promise<void>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhrRef.current.set(itemId, xhr);
-      xhr.open("PUT", uploadUrl);
-      xhr.setRequestHeader("Content-Type", file.type);
-      xhr.upload.onprogress = (event) => { if (event.lengthComputable) updateItem(itemId, { progress: Math.round((event.loaded / event.total) * 80) }); };
-      xhr.onload = () => { xhrRef.current.delete(itemId); if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error("MinIO upload failed")); };
-      xhr.onerror = () => { xhrRef.current.delete(itemId); reject(new Error("MinIO upload failed")); };
-      xhr.onabort = () => { xhrRef.current.delete(itemId); reject(new Error("Upload cancelled")); };
-      xhr.send(file);
-    });
+    const controller = new AbortController();
+    abortRef.current.set(itemId, controller);
+    const { objectKey } = await uploadAdminFile(file, (progress) => updateItem(itemId, { progress }), controller.signal);
+    abortRef.current.delete(itemId);
+    updateItem(itemId, { status: "processing", progress: 85 });
     const processResponse = await fetch(`/api/admin/projects/${projectId}/images/process`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ objectKey, filename: file.name, contentType: file.type }) });
     if (!processResponse.ok) throw new Error("Could not process image");
     return (await processResponse.json()).image as UploadedImage;
@@ -69,6 +66,7 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
         updateItem(item.id, { progress: 100, status: "done", error: undefined });
         return;
       } catch (error) {
+        abortRef.current.delete(item.id);
         if (cancelledRef.current.has(item.id)) return;
         if (attempt < MAX_ATTEMPTS) {
           updateItem(item.id, { status: "ready", error: `Retrying (${attempt + 1}/${MAX_ATTEMPTS})…` });
@@ -116,7 +114,8 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
 
   function remove(item: UploadItem) {
     cancelledRef.current.add(item.id);
-    xhrRef.current.get(item.id)?.abort();
+    abortRef.current.get(item.id)?.abort();
+    abortRef.current.delete(item.id);
     queueRef.current = queueRef.current.filter((id) => id !== item.id);
     itemsRef.current = itemsRef.current.filter((current) => current.id !== item.id);
     setItems(itemsRef.current);
@@ -129,10 +128,10 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
       <UploadCloud size={24} strokeWidth={1.2} />
       <span className="mt-4 text-sm">Drop images here</span>
       <span className="mt-2 text-xs text-muted">JPEG, PNG, WebP or AVIF · up to 50MB each</span>
-      <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="sr-only" onChange={(event) => event.target.files && addFiles(event.target.files)} />
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="sr-only" onChange={(event) => { if (event.target.files) addFiles(event.target.files); event.currentTarget.value = ""; }} />
     </label>
     {!!items.length && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{items.map((item) => <div key={item.id} className="relative overflow-hidden bg-fog">
-      <div className="relative aspect-square"><Image src={browserImageUrl(item.preview)} alt={item.name} fill sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw" unoptimized className="object-cover" /><div className="absolute inset-0 bg-black/10" />{item.status === "uploading" && <div className="absolute inset-0 flex items-center justify-center text-white"><LoaderCircle size={24} className="animate-spin" /></div>}{item.status === "done" && <CheckCircle2 size={18} className="absolute right-2 top-2 text-white" />}</div>
+      <div className="relative aspect-square"><Image src={browserImageUrl(item.preview)} alt={item.name} fill sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw" unoptimized className="object-cover" /><div className="absolute inset-0 bg-black/10" />{(item.status === "uploading" || item.status === "processing") && <div className="absolute inset-0 flex items-center justify-center text-white"><LoaderCircle size={24} className="animate-spin" /></div>}{item.status === "done" && <CheckCircle2 size={18} className="absolute right-2 top-2 text-white" />}</div>
       <div className="flex items-center gap-1 bg-paper p-2 text-[10px]"><GripVertical size={12} className="text-muted" /><span className="truncate">{item.name}</span>{item.status === "error" && <button type="button" onClick={() => retry(item)} title="Retry upload" className="ml-auto text-red-600"><RotateCcw size={13} /></button>}<button type="button" onClick={() => remove(item)} aria-label={`Remove ${item.name}`} className="ml-1"><X size={13} /></button></div>
       <div className="h-0.5 bg-fog"><div className={`h-full ${item.status === "error" ? "bg-red-500" : "bg-ink"}`} style={{ width: `${item.progress}%` }} /></div>
       {item.error && <p className="truncate bg-paper px-2 pb-2 text-[10px] text-red-600">{item.error}</p>}

@@ -237,8 +237,30 @@ body {
   .contact-title-wrap, .contact-details { animation: none; }
 }
 
-a { color: inherit; text-decoration: none; }
-button, input, textarea, select { font: inherit; }
+@layer base {
+  a { color: inherit; text-decoration: none; }
+  button, input, textarea, select { font: inherit; }
+}
+
+.admin-shell,
+.admin-shell * {
+  font-family: Arial, sans-serif !important;
+  font-weight: 500 !important;
+}
+
+.admin-shell h1,
+.admin-shell h2,
+.admin-shell h3,
+.admin-shell strong,
+.admin-shell button,
+.admin-shell [role="button"] {
+  font-weight: 700 !important;
+}
+
+.admin-shell h1 {
+  font-size: clamp(2.4rem, 6vw, 3.75rem) !important;
+  line-height: .95;
+}
 
 ::selection { background: #171716; color: #f7f6f2; }
 

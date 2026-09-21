@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { reorderIdsSchema } from "@/lib/validations";
+import { recordAudit } from "@/lib/audit";
+import { isSameOrigin } from "@/lib/request-security";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
-  if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+  const user = await requireAdmin();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: projectId } = await context.params;
   const body = await request.json().catch(() => null);
   const parsed = reorderIdsSchema.safeParse(body);
@@ -19,5 +23,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   }
 
   await db.$transaction(ids.map((imageId: string, index: number) => db.image.update({ where: { id: imageId }, data: { sortOrder: index } })));
+  await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "IMAGES_REORDERED", entityType: "Project", entityId: projectId });
   return NextResponse.json({ ok: true });
 }
