@@ -62,7 +62,7 @@ export function Lightbox({ images, active, onClose, onPrevious, onNext }: {
         touchStartX.current = null;
       }}
     >
-      <Image src={current.src} alt={current.alt} fill sizes="95vw" className="object-contain" priority />
+      <Image src={current.src} alt={current.alt} fill sizes="95vw" className="object-contain" unoptimized priority />
       <button type="button" onClick={(event) => { event.stopPropagation(); onPrevious(); }} className="absolute left-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Previous image"><ChevronLeft size={28} strokeWidth={1.2} /></button>
       <button type="button" onClick={(event) => { event.stopPropagation(); onNext(); }} className="absolute right-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Next image"><ChevronRight size={28} strokeWidth={1.2} /></button>
     </div>
