@@ -41,9 +41,12 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "9000" },
       { protocol: "https", hostname: "localhost", port: "9000" },
-      { protocol: "http", hostname: "10.100.101.22", port: "9010" },
-      { protocol: "https", hostname: "10.100.101.22", port: "9010" },
+      { protocol: "http", hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
+      { protocol: "https", hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
     ],
+    // The production MinIO endpoint is a private IP by design. Keep the exception
+    // scoped to that exact endpoint and bucket path; do not allow arbitrary local IPs.
+    dangerouslyAllowLocalIP: true,
     formats: ["image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
