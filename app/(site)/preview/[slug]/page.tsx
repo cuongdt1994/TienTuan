@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPreviewProject } from "@/lib/content";
+import { previewTokenSchema } from "@/lib/validations";
 import { getProjectPageMetadata, ProjectPage } from "@/components/site/project-page";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,8 @@ type Params = { slug: string };
 type SearchParams = { token?: string | string[] };
 
 function readToken(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
+  const token = Array.isArray(value) ? value[0] : value;
+  return token && previewTokenSchema.safeParse(token).success ? token : undefined;
 }
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<Params>; searchParams: Promise<SearchParams> }): Promise<Metadata> {

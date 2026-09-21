@@ -18,7 +18,7 @@ export default async function HomePage() {
 
   return <main>
     <section className="site-wide-container pb-12 pt-12 md:pb-20 md:pt-16">
-      <ProjectGrid projects={homeProjects} featured />
+      <ProjectGrid projects={homeProjects} />
     </section>
   </main>;
 }

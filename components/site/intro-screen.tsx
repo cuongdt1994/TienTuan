@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Facebook, Instagram } from "lucide-react";
+import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type IntroScreenProps = {
@@ -13,11 +14,12 @@ type IntroScreenProps = {
 
 export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScreenProps) {
   const [entering, setEntering] = useState(false);
+  const router = useRouter();
 
   function openPortfolio() {
     setEntering(true);
     document.cookie = "portfolio_intro_seen=1; Path=/; Max-Age=2592000; SameSite=Lax";
-    window.location.assign("/");
+    router.replace("/");
   }
 
   return (
@@ -47,12 +49,12 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
             {(instagram || facebook) && <div className="mt-5 flex items-center justify-center gap-4" aria-label="Social links">
               {instagram && (
                 <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-ink/80 transition-all duration-200 hover:scale-110 hover:text-ink">
-                  <Instagram size={15} strokeWidth={1.8} />
+                  <InstagramIcon size={15} strokeWidth={1.8} />
                 </a>
               )}
               {facebook && (
                 <a href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="text-ink/80 transition-all duration-200 hover:scale-110 hover:text-ink">
-                  <Facebook size={15} strokeWidth={1.8} />
+                  <FacebookIcon size={15} strokeWidth={1.8} />
                 </a>
               )}
             </div>}

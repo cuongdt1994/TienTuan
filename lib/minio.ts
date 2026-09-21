@@ -1,3 +1,4 @@
+import "server-only";
 import { CreateBucketCommand, DeleteObjectsCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
@@ -22,10 +23,10 @@ export function objectUrl(key: string) {
   return `${env.MINIO_USE_SSL ? "https" : "http"}://${env.MINIO_ENDPOINT}:${env.MINIO_PORT}/${env.MINIO_BUCKET}/${key}`;
 }
 
-export async function createUploadUrl(key: string, contentType: string) {
+export async function createUploadUrl(key: string, contentType: string, size?: number) {
   return getSignedUrl(
     s3,
-    new PutObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key, ContentType: contentType }),
+    new PutObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key, ContentType: contentType, ...(size ? { ContentLength: size } : {}) }),
     { expiresIn: 900 },
   );
 }

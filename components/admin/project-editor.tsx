@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -17,7 +18,7 @@ function SortableImage({ image, index, onDelete, onCover, isCover }: { image: Im
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: image.id });
   return <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="relative min-w-0 bg-paper">
     <div className="relative aspect-[4/3] overflow-hidden bg-fog">
-      <img src={image.thumbnailUrl} alt={image.alt ?? ""} className="h-full w-full object-contain" />
+      <Image src={image.thumbnailUrl} alt={image.alt ?? ""} fill sizes="(max-width: 639px) 50vw, 240px" unoptimized className="object-contain" />
       <span className="absolute left-2 top-2 bg-white/90 px-2 py-1 text-[9px] uppercase tracking-editorial">{index + 1}</span>
       {isCover && <span className="absolute right-2 top-2 bg-white/90 px-2 py-1 text-[9px] uppercase tracking-editorial">Cover</span>}
     </div>

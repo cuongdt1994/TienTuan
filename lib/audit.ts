@@ -1,4 +1,5 @@
-import type { Prisma } from "@prisma/client";
+import "server-only";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 export async function recordAudit(input: { userId?: string; action: string; entityType?: string; entityId?: string; metadata?: Prisma.InputJsonValue }) {

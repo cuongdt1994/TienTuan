@@ -1,8 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import slugify from "slugify";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? "postgresql://portfolio:portfolio@localhost:5432/portfolio?schema=public" }) });
 
 async function main() {
   const email = process.env.ADMIN_EMAIL ?? "admin@example.com";
@@ -15,7 +16,7 @@ async function main() {
     create: { email, passwordHash, role: "ADMIN" },
   });
 
-  const categories = await Promise.all(
+  await Promise.all(
     ["Commercial", "Beauty", "Portrait"].map((name, index) =>
       prisma.category.upsert({
         where: { slug: slugify(name, { lower: true }) },

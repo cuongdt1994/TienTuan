@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { categoryUpdateSchema } from "@/lib/validations";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -8,18 +9,15 @@ export async function PATCH(request: Request, context: Context) {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await context.params;
-  const body = await request.json();
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const showOnHome = typeof body.showOnHome === "boolean" ? body.showOnHome : undefined;
-
-  if (name.length < 2 && typeof showOnHome !== "boolean") return NextResponse.json({ error: "Invalid category update" }, { status: 400 });
+  const parsed = categoryUpdateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid category update" }, { status: 400 });
 
   try {
     const category = await db.category.update({
       where: { id },
       data: {
-        ...(name.length >= 2 ? { name } : {}),
-        ...(typeof showOnHome === "boolean" ? { showOnHome } : {}),
+        ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
+        ...(parsed.data.showOnHome !== undefined ? { showOnHome: parsed.data.showOnHome } : {}),
       },
     });
     return NextResponse.json({ category });

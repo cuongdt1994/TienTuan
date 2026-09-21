@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, FolderKanban, Tags, Settings, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 
@@ -14,8 +14,9 @@ const nav = [
 
 export function AdminShell({ children, email }: { children: React.ReactNode; email: string }) {
   const path = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  async function logout() { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/admin/login"; }
+  async function logout() { await fetch("/api/auth/logout", { method: "POST" }); router.replace("/admin/login"); }
   return <div className="min-h-screen bg-paper text-ink">
     <button onClick={() => setOpen(!open)} className="fixed right-5 top-5 z-50 rounded-full bg-ink p-3 text-paper lg:hidden" aria-label="Toggle admin navigation">{open ? <X size={18} /> : <Menu size={18} />}</button>
     <aside className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-line bg-paper px-7 py-8 transition-transform lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>

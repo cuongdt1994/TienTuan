@@ -1,8 +1,11 @@
+import "server-only";
 import bcrypt from "bcryptjs";
-import { SignJWT, jwtVerify } from "jose";
+import { jwtVerify } from "jose/jwt/verify";
+import { SignJWT } from "jose/jwt/sign";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { SESSION_AUDIENCE, SESSION_ISSUER } from "@/lib/auth-constants";
 
 const COOKIE_NAME = "atelier_session";
 const secret = new TextEncoder().encode(env.AUTH_SECRET);
@@ -15,9 +18,9 @@ export async function createSession(userId: string) {
     authVersion = user.authVersion;
   }
   const token = await new SignJWT({ userId, role: "ADMIN", authVersion })
-    .setIssuer("tien-tuan-admin")
-    .setAudience("tien-tuan-admin")
-    .setProtectedHeader({ alg: "HS256" })
+    .setIssuer(SESSION_ISSUER)
+    .setAudience(SESSION_AUDIENCE)
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt()
     .setExpirationTime("14d")
     .sign(secret);
@@ -26,7 +29,7 @@ export async function createSession(userId: string) {
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ?? false,
+    secure: process.env.NODE_ENV === "production" || env.NEXT_PUBLIC_SITE_URL.startsWith("https://"),
     path: "/",
     maxAge: 60 * 60 * 24 * 14,
   });
@@ -42,13 +45,18 @@ export async function getSession() {
   if (!token) return null;
   try {
     // Keep sessions issued before the security upgrade valid when their authVersion is still current.
-    const { payload } = await jwtVerify(token, secret);
-    const userId = String(payload.userId);
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ["HS256"],
+      issuer: SESSION_ISSUER,
+      audience: SESSION_AUDIENCE,
+    });
+    if (payload.role !== "ADMIN" || typeof payload.userId !== "string") return null;
+    const userId = payload.userId;
     if (userId !== "dev-admin") {
       const user = await db.user.findUnique({ where: { id: userId }, select: { role: true, authVersion: true } });
       if (!user || user.role !== "ADMIN" || user.authVersion !== Number(payload.authVersion ?? 0)) return null;
     }
-    return { userId, role: String(payload.role) };
+    return { userId, role: "ADMIN" as const };
   } catch {
     return null;
   }
@@ -76,14 +84,14 @@ export async function requireAdmin() {
 
 export async function verifyCredentials(email: string, password: string) {
   try {
-    const user = await db.user.findUnique({ where: { email: email.toLowerCase() } });
+    const user = await db.user.findUnique({ where: { email: email.trim().toLowerCase() } });
     if (user && await bcrypt.compare(password, user.passwordHash)) return user;
   } catch {
     // During local development the database may not be running yet.
   }
 
-  const devLoginAllowed = process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_LOGIN === "true";
-  if (devLoginAllowed && email.toLowerCase() === (process.env.ADMIN_EMAIL ?? "admin@example.com").toLowerCase() && password === (process.env.ADMIN_PASSWORD ?? "change-me-before-production")) {
+  const devLoginAllowed = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEV_LOGIN === "true";
+  if (devLoginAllowed && email.trim().toLowerCase() === (process.env.ADMIN_EMAIL ?? "admin@example.com").toLowerCase() && password === (process.env.ADMIN_PASSWORD ?? "change-me-before-production")) {
     return {
       id: "dev-admin",
       email: process.env.ADMIN_EMAIL ?? "admin@example.com",

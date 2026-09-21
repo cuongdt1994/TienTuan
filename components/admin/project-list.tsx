@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -12,7 +13,7 @@ type Project = { id: string; title: string; slug: string; status: string; catego
 
 function SortableRow({ project }: { project: Project }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: project.id });
-  return <tr ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="border-b border-line bg-paper"><td className="py-4"><div className="flex items-center gap-3"><button {...attributes} {...listeners} className="cursor-grab touch-none text-muted" aria-label={`Reorder ${project.title}`}><GripVertical size={15} /></button>{project.coverImage ? <img src={project.coverImage.thumbnailUrl} alt="" className="h-14 w-14 object-cover" style={{ objectPosition: `${project.coverPositionX}% ${project.coverPositionY}%` }} /> : <div className="h-14 w-14 bg-fog" />}<div><p>{project.title}</p><p className="mt-1 text-xs text-muted">/{project.slug}</p></div></div></td><td className="py-4 text-muted">{project.category.name}</td><td className="py-4 text-muted">{project._count.images}</td><td className="py-4"><span className={`text-[10px] uppercase tracking-editorial ${project.status === "PUBLISHED" ? "text-emerald-700" : "text-muted"}`}>{project.status}</span></td><td className="py-4"><div className="flex items-center gap-4"><Link href={`/admin/projects/${project.id}`} className="text-[10px] uppercase tracking-editorial underline underline-offset-4">Edit</Link>{project.status !== "PUBLISHED" && <PreviewLink projectId={project.id} />}</div></td></tr>;
+  return <tr ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="border-b border-line bg-paper"><td className="py-4"><div className="flex items-center gap-3"><button {...attributes} {...listeners} className="cursor-grab touch-none text-muted" aria-label={`Reorder ${project.title}`}><GripVertical size={15} /></button>{project.coverImage ? <Image src={project.coverImage.thumbnailUrl} alt="" width={56} height={56} unoptimized className="h-14 w-14 object-cover" style={{ objectPosition: `${project.coverPositionX}% ${project.coverPositionY}%` }} /> : <div className="h-14 w-14 bg-fog" />}<div><p>{project.title}</p><p className="mt-1 text-xs text-muted">/{project.slug}</p></div></div></td><td className="py-4 text-muted">{project.category.name}</td><td className="py-4 text-muted">{project._count.images}</td><td className="py-4"><span className={`text-[10px] uppercase tracking-editorial ${project.status === "PUBLISHED" ? "text-emerald-700" : "text-muted"}`}>{project.status}</span></td><td className="py-4"><div className="flex items-center gap-4"><Link href={`/admin/projects/${project.id}`} className="text-[10px] uppercase tracking-editorial underline underline-offset-4">Edit</Link>{project.status !== "PUBLISHED" && <PreviewLink projectId={project.id} />}</div></td></tr>;
 }
 
 export function ProjectList({ initialProjects }: { initialProjects: Project[] }) {

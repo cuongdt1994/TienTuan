@@ -1,4 +1,5 @@
-import type { Category, Image, Project, SiteSettings } from "@prisma/client";
+import "server-only";
+import type { Category, Image, Project, SiteSettings } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 export type ProjectWithMedia = Project & {

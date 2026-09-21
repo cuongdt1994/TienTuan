@@ -62,7 +62,14 @@ export default function CategoriesPage() {
     setCategories(data.categories ?? []);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/categories")
+      .then((response) => response.json())
+      .then((data) => { if (!cancelled) setCategories(data.categories ?? []); })
+      .catch(() => { if (!cancelled) setError("Could not load categories."); });
+    return () => { cancelled = true; };
+  }, []);
 
   async function reorder(event: DragEndEvent) {
     const { active, over } = event;

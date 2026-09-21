@@ -1,11 +1,10 @@
 import { getSettings } from "@/lib/content";
 import {
-  Facebook,
-  Instagram,
   Mail,
   MessageCircle,
   Phone,
 } from "lucide-react";
+import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
 
 export const metadata = {
   title: "Contact — Tien Tuan Photography",
@@ -56,14 +55,14 @@ export default async function ContactPage() {
             <div className="contact-items">
               {settings.instagram && (
                 <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="contact-item contact-link">
-                  <Instagram size={20} strokeWidth={1.8} aria-hidden="true" />
+                  <InstagramIcon size={20} strokeWidth={1.8} />
                   <span>Instagram</span>
                 </a>
               )}
 
               {settings.facebook && (
                 <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="contact-item contact-link">
-                  <Facebook size={20} strokeWidth={1.8} aria-hidden="true" />
+                  <FacebookIcon size={20} strokeWidth={1.8} />
                   <span>Facebook</span>
                 </a>
               )}

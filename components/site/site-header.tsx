@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Facebook, Instagram, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
 
 type HeaderCategory = { name: string; slug: string };
 
@@ -16,8 +17,8 @@ export function SiteHeader({ name, categories, facebook, instagram }: { name: st
     ["Contact", "/contact"] as const,
   ];
   const socialLinks = <>
-    {instagram && <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-ink/70 transition-colors hover:text-ink"><Instagram size={16} strokeWidth={1.6} /></a>}
-    {facebook && <a href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="text-ink/70 transition-colors hover:text-ink"><Facebook size={16} strokeWidth={1.6} /></a>}
+    {instagram && <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-ink/70 transition-colors hover:text-ink"><InstagramIcon size={16} strokeWidth={1.6} /></a>}
+    {facebook && <a href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="text-ink/70 transition-colors hover:text-ink"><FacebookIcon size={16} strokeWidth={1.6} /></a>}
   </>;
   return (
     <header className="relative z-40 bg-paper/95 backdrop-blur-sm">

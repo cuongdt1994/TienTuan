@@ -8,11 +8,15 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: Context) {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = projectSchema.partial().safeParse(await request.json());
+  const parsed = projectSchema.partial().safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid project" }, { status: 400 });
   const { id } = await context.params;
-  const project = await db.project.update({ where: { id }, data: { ...parsed.data, ...(parsed.data.status ? { publishedAt: parsed.data.status === "PUBLISHED" ? new Date() : null } : {}) } });
-  return NextResponse.json({ project });
+  try {
+    const project = await db.project.update({ where: { id }, data: { ...parsed.data, ...(parsed.data.status ? { publishedAt: parsed.data.status === "PUBLISHED" ? new Date() : null } : {}) } });
+    return NextResponse.json({ project });
+  } catch {
+    return NextResponse.json({ error: "Could not update project. The slug may already exist." }, { status: 409 });
+  }
 }
 
 export async function DELETE(_request: Request, context: Context) {

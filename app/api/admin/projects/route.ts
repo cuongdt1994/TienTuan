@@ -6,7 +6,7 @@ import { projectSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = projectSchema.safeParse(await request.json());
+  const parsed = projectSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid project" }, { status: 400 });
   try {
     const project = await db.$transaction(async (transaction) => {
