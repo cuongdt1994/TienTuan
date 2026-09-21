@@ -48,6 +48,7 @@ const nextConfig: NextConfig = {
     // scoped to that exact endpoint and bucket path; do not allow arbitrary local IPs.
     dangerouslyAllowLocalIP: true,
     formats: ["image/webp"],
+    qualities: [75, 90, 95],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
   typedRoutes: true,
