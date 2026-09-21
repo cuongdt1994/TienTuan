@@ -10,7 +10,7 @@ export function browserImageUrl(value: string) {
     if (!url.pathname.startsWith(prefix)) return value;
     const key = url.pathname.slice(prefix.length);
     if (!key) return value;
-    return `/api/media?key=${encodeURIComponent(key)}`;
+    return `/media/${key.split("/").map(encodeURIComponent).join("/")}`;
   } catch {
     return value;
   }
