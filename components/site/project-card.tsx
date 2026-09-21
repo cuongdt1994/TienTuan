@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import type { ProjectWithMedia } from "@/lib/content";
+import { browserImageUrl } from "@/lib/media-url";
 
 export function ProjectCard({ project, priority = false, index = 0, aspectRatio }: { project: ProjectWithMedia; priority?: boolean; index?: number; aspectRatio?: string }) {
   const image = project.coverImage ?? project.images[0];
@@ -10,7 +11,7 @@ export function ProjectCard({ project, priority = false, index = 0, aspectRatio 
     <Link href={`/${project.slug}` as Route} className={`group block animate-fade-up [animation-delay:${Math.min(index * 90, 540)}ms]`}>
       <div className="relative aspect-[4/3] overflow-hidden bg-paper" style={aspectRatio ? { aspectRatio } : undefined}>
         <Image
-          src={image.originalUrl}
+          src={browserImageUrl(image.originalUrl)}
           alt={image.alt ?? `${project.title} cover`}
           fill
           unoptimized

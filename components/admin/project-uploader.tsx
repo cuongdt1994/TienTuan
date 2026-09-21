@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2, GripVertical, LoaderCircle, Pause, Play, RotateCcw, UploadCloud, X } from "lucide-react";
+import { browserImageUrl } from "@/lib/media-url";
 
 type UploadStatus = "ready" | "uploading" | "done" | "error";
 type UploadItem = { id: string; name: string; file: File; preview: string; progress: number; status: UploadStatus; attempts: number; error?: string };
@@ -131,7 +132,7 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
       <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="sr-only" onChange={(event) => event.target.files && addFiles(event.target.files)} />
     </label>
     {!!items.length && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{items.map((item) => <div key={item.id} className="relative overflow-hidden bg-fog">
-      <div className="relative aspect-square"><Image src={item.preview} alt={item.name} fill sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw" unoptimized className="object-cover" /><div className="absolute inset-0 bg-black/10" />{item.status === "uploading" && <div className="absolute inset-0 flex items-center justify-center text-white"><LoaderCircle size={24} className="animate-spin" /></div>}{item.status === "done" && <CheckCircle2 size={18} className="absolute right-2 top-2 text-white" />}</div>
+      <div className="relative aspect-square"><Image src={browserImageUrl(item.preview)} alt={item.name} fill sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw" unoptimized className="object-cover" /><div className="absolute inset-0 bg-black/10" />{item.status === "uploading" && <div className="absolute inset-0 flex items-center justify-center text-white"><LoaderCircle size={24} className="animate-spin" /></div>}{item.status === "done" && <CheckCircle2 size={18} className="absolute right-2 top-2 text-white" />}</div>
       <div className="flex items-center gap-1 bg-paper p-2 text-[10px]"><GripVertical size={12} className="text-muted" /><span className="truncate">{item.name}</span>{item.status === "error" && <button type="button" onClick={() => retry(item)} title="Retry upload" className="ml-auto text-red-600"><RotateCcw size={13} /></button>}<button type="button" onClick={() => remove(item)} aria-label={`Remove ${item.name}`} className="ml-1"><X size={13} /></button></div>
       <div className="h-0.5 bg-fog"><div className={`h-full ${item.status === "error" ? "bg-red-500" : "bg-ink"}`} style={{ width: `${item.progress}%` }} /></div>
       {item.error && <p className="truncate bg-paper px-2 pb-2 text-[10px] text-red-600">{item.error}</p>}

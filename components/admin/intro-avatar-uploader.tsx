@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { CircleUserRound, LoaderCircle, Trash2, UploadCloud } from "lucide-react";
+import { browserImageUrl } from "@/lib/media-url";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
@@ -71,7 +72,7 @@ export function IntroAvatarUploader({ value, onChange }: { value: string; onChan
   return (
     <div className="flex flex-wrap items-start gap-5">
       <div className="relative h-28 w-28 overflow-hidden rounded-full bg-fog">
-        {value ? <Image src={value} alt="Intro avatar preview" fill sizes="112px" unoptimized className="object-cover" /> : <CircleUserRound className="absolute inset-0 m-auto text-muted" size={38} strokeWidth={1.2} />}
+        {value ? <Image src={browserImageUrl(value)} alt="Intro avatar preview" fill sizes="112px" unoptimized className="object-cover" /> : <CircleUserRound className="absolute inset-0 m-auto text-muted" size={38} strokeWidth={1.2} />}
         {busy && <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-ink/60 text-white"><LoaderCircle size={18} className="animate-spin" /><span className="text-[10px]">{progress}%</span></div>}
       </div>
       <div className="flex min-w-[220px] flex-1 flex-col items-start gap-3">
