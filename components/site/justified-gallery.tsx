@@ -93,6 +93,7 @@ export function JustifiedGallery({ images }: { images: LightboxImage[] }) {
                 src={image.thumbnailSrc ?? image.src}
                 alt={image.alt}
                 fill
+                unoptimized
                 priority={imageIndex < 4}
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 quality={95}
