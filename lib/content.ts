@@ -80,7 +80,10 @@ export async function getPreviewProject(slug: string, previewToken: string) {
 
 export async function getCategories() {
   try {
-    const categories = await db.category.findMany({ orderBy: { sortOrder: "asc" } });
+    const categories = await db.category.findMany({
+      where: { projects: { some: { status: "PUBLISHED" } } },
+      orderBy: { sortOrder: "asc" },
+    });
     return categories;
   } catch {
     return [];

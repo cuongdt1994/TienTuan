@@ -43,7 +43,7 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
 
           <div className="min-w-0 animate-fade-up text-center">
             <p className="text-[11px] uppercase tracking-editorial text-muted">{name}</p>
-            <h1 className="mt-4 whitespace-nowrap text-[clamp(3.25rem,5.8vw,5rem)] font-black uppercase leading-[0.84] tracking-[-0.08em]">Portfolio</h1>
+            <h1 className="mt-4 w-full max-w-full break-words text-[clamp(2.75rem,12vw,5rem)] font-black uppercase leading-[0.84] tracking-[-0.08em] sm:whitespace-nowrap sm:text-[clamp(3.25rem,5.8vw,5rem)]">Portfolio</h1>
             {(instagram || facebook) && <div className="mt-5 flex items-center justify-center gap-4" aria-label="Social links">
               {instagram && (
                 <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-ink/80 transition-all duration-200 hover:scale-110 hover:text-ink">
