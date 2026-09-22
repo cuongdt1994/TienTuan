@@ -1,16 +1,41 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { getSettings } from "@/lib/content";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = getSiteUrl();
+  const title = settings.websiteTitle || `${settings.photographerName} — Photography`;
+  const description = settings.websiteDescription || "Editorial photography for culture, fashion, and people.";
   return {
-    title: settings.websiteTitle,
-    description: settings.websiteDescription,
+    title: { default: title, template: `%s | ${settings.photographerName}` },
+    description,
     metadataBase: new URL(base),
-    openGraph: { title: settings.websiteTitle, description: settings.websiteDescription, type: "website", siteName: settings.photographerName, url: base },
-    twitter: { card: "summary_large_image", title: settings.websiteTitle, description: settings.websiteDescription },
+    applicationName: settings.photographerName,
+    authors: [{ name: settings.photographerName, url: base }],
+    keywords: ["Tien Tuan Photography", "photographer", "editorial photography", "commercial photography", "portrait photography"],
+    alternates: { canonical: "/" },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      locale: "vi_VN",
+      siteName: settings.photographerName,
+      url: base,
+    },
+    twitter: { card: "summary_large_image", title, description },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
   };
 }
 

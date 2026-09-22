@@ -12,14 +12,15 @@ export default async function HomePage() {
   const homeProjects = projects.filter((project) => project.category.showOnHome);
   const introSeen = (await cookies()).get("portfolio_intro_seen")?.value === "1";
 
-  if (settings.introEnabled && !introSeen) {
-    const fallbackAvatar = settings.introAvatarUrl ? browserImageUrl(settings.introAvatarUrl) : homeProjects[0]?.coverImage?.largeUrl ? browserImageUrl(homeProjects[0].coverImage.largeUrl) : homeProjects[0]?.images[0]?.largeUrl ? browserImageUrl(homeProjects[0].images[0].largeUrl) : undefined;
-    return <IntroScreen name={settings.photographerName} avatarUrl={fallbackAvatar} instagram={settings.instagram} facebook={settings.facebook} />;
-  }
+  const fallbackAvatar = settings.introAvatarUrl ? browserImageUrl(settings.introAvatarUrl) : homeProjects[0]?.coverImage?.largeUrl ? browserImageUrl(homeProjects[0].coverImage.largeUrl) : homeProjects[0]?.images[0]?.largeUrl ? browserImageUrl(homeProjects[0].images[0].largeUrl) : undefined;
 
-  return <main>
-    <section className="site-wide-container pb-12 pt-12 md:pb-20 md:pt-16">
-      <ProjectGrid projects={homeProjects} />
-    </section>
-  </main>;
+  return <>
+    <main>
+      <h1 className="sr-only">{settings.photographerName} — Photography Portfolio</h1>
+      <section className="site-wide-container pb-12 pt-12 md:pb-20 md:pt-16">
+        <ProjectGrid projects={homeProjects} />
+      </section>
+    </main>
+    {settings.introEnabled && !introSeen && <IntroScreen name={settings.photographerName} avatarUrl={fallbackAvatar} instagram={settings.instagram} facebook={settings.facebook} />}
+  </>;
 }

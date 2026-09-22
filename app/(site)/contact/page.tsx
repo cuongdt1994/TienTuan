@@ -7,7 +7,7 @@ import {
 import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
 
 export const metadata = {
-  title: "Contact — Tien Tuan Photography",
+  title: "Contact For Work",
 };
 export const dynamic = "force-dynamic";
 

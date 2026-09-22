@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const category = await getCategoryBySlug(slug);
   if (category) {
     return {
-      title: `${category.name} — Tien Tuan Photography`,
+      title: category.name,
       alternates: { canonical: `/${category.slug}` },
     };
   }
