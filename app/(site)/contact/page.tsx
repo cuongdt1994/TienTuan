@@ -8,6 +8,7 @@ import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
 
 export const metadata = {
   title: "Contact For Work",
+  alternates: { canonical: "/contact" },
 };
 export const dynamic = "force-dynamic";
 
