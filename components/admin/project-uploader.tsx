@@ -124,7 +124,7 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
   }
 
   return <section className="space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted">Upload tối đa 20 ảnh cùng lúc · ảnh lớn sẽ chờ tạo biến thể local.</p><button type="button" onClick={togglePaused} className="flex items-center gap-2 text-[10px] uppercase tracking-editorial underline underline-offset-4">{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? "Resume queue" : "Pause queue"}</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted">Upload tối đa 20 ảnh cùng lúc · Cloudflare tự tạo bản hiển thị và cache ở nền.</p><button type="button" onClick={togglePaused} className="flex items-center gap-2 text-[10px] uppercase tracking-editorial underline underline-offset-4">{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? "Resume queue" : "Pause queue"}</button></div>
     <label onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); addFiles(event.dataTransfer.files); }} className={`flex min-h-48 cursor-pointer flex-col items-center justify-center border border-dashed ${dragging ? "border-ink bg-fog" : "border-line bg-paper"} p-8 text-center transition-colors`}>
       <UploadCloud size={24} strokeWidth={1.2} />
       <span className="mt-4 text-sm">Drop images here</span>

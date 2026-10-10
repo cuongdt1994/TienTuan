@@ -14,10 +14,10 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "frame-ancestors 'self'",
   "form-action 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${imageOrigin}`,
-  `connect-src 'self' ${imageOrigin}`,
+  `connect-src 'self' ${imageOrigin} https://cloudflareinsights.com`,
   "font-src 'self' data:",
 ].join("; ");
 
@@ -34,6 +34,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+    inlineCss: true,
+  },
   reactStrictMode: true,
   images: {
     unoptimized: true,

@@ -1,8 +1,4 @@
-"use client";
-
 import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 type IntroScreenProps = {
   name: string;
@@ -12,15 +8,6 @@ type IntroScreenProps = {
 };
 
 export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScreenProps) {
-  const [entering, setEntering] = useState(false);
-  const router = useRouter();
-
-  function openPortfolio() {
-    setEntering(true);
-    document.cookie = "portfolio_intro_seen=1; Path=/; Max-Age=2592000; SameSite=Lax";
-    router.replace("/");
-  }
-
   return (
     <main className="fixed inset-0 z-[100] overflow-x-hidden overflow-y-auto bg-paper text-ink">
       <div className="mx-auto flex min-h-svh w-full max-w-[1440px] items-center justify-center px-6 py-10 sm:px-10 lg:px-16">
@@ -57,14 +44,12 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
                 </a>
               )}
             </div>}
-            <button
-              type="button"
-              onClick={openPortfolio}
-              disabled={entering}
+            <a
+              href="/api/intro/enter"
               className="mt-6 inline-flex h-10 min-w-[104px] items-center justify-center rounded-full border border-ink/60 px-6 text-[9px] uppercase tracking-[0.18em] shadow-[0_5px_16px_rgba(23,23,22,0.05)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-ink hover:text-paper hover:shadow-[0_8px_20px_rgba(23,23,22,0.09)] disabled:opacity-50"
             >
-              {entering ? "Opening" : "Open"}
-            </button>
+              Open
+            </a>
           </div>
         </div>
       </div>

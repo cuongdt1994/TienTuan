@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ArrowUpIcon } from "@/components/site/ui-icons";
 
 export function ScrollToTop() {
   const [visible, setVisible] = useState(false);
@@ -20,7 +20,7 @@ export function ScrollToTop() {
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-line text-muted transition-all duration-300 hover:border-ink hover:text-ink ${visible ? "opacity-60" : "opacity-30"}`}
     >
-      <ArrowUp size={14} strokeWidth={1.4} />
+      <ArrowUpIcon size={14} strokeWidth={1.4} />
     </button>
   );
 }

@@ -7,7 +7,8 @@ import { imageProcessSchema, MAX_UPLOAD_BYTES } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { isSameOrigin } from "@/lib/request-security";
 import { variantUrl } from "@/lib/image-variants";
-import { createCloudflareWebpVariants } from "@/lib/cloudflare-variants";
+import { createCloudflareRemoteVariants } from "@/lib/cloudflare-variants";
+import { writeImageSourceManifest } from "@/lib/image-source";
 import { invalidateSiteContent } from "@/lib/content-cache";
 
 type Context = { params: Promise<{ id: string }> };
@@ -33,13 +34,14 @@ export async function POST(request: Request, context: Context) {
       return NextResponse.json({ error: "Image is too large" }, { status: 413 });
     }
     const imageId = crypto.randomUUID();
+    await writeImageSourceManifest(imageId, { objectKey, contentType: parsed.data.contentType, size: source.ContentLength });
     const image = await db.image.create({ data: { id: imageId, projectId, originalUrl: privateObjectRef(objectKey), largeUrl: variantUrl(imageId, 1920), mediumUrl: variantUrl(imageId, 1280), thumbnailUrl: variantUrl(imageId, 640), width: parsed.data.width, height: parsed.data.height, sortOrder: project.images.length, alt: `${project.title} - Photo ${String(project.images.length + 1).padStart(2, "0")}` } });
     if (!project.coverImageId) await db.project.update({ where: { id: projectId }, data: { coverImageId: image.id } });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "IMAGE_UPLOADED", entityType: "Image", entityId: image.id, metadata: { projectId, filename } });
     invalidateSiteContent();
     const context = await import("@opennextjs/cloudflare").then(({ getCloudflareContext }) => getCloudflareContext({ async: true }));
-    const variants = source.ContentLength <= 20 * 1024 * 1024 ? "processing" : "pending-local";
-    if (variants === "processing") context.ctx.waitUntil(createCloudflareWebpVariants(image.id, objectKey, source.ContentLength).catch((error) => console.error("Cloudflare image variants failed", error)));
+    const variants = "processing";
+    context.ctx.waitUntil(createCloudflareRemoteVariants(image.id, request.url).catch((error) => console.error("Cloudflare image variants failed", error)));
     return NextResponse.json({ image, variants });
   } catch (error) {
     console.error("Image processing failed", error);

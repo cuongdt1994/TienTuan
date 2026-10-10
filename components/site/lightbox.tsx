@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { variantUrl } from "@/lib/image-variants";
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon } from "@/components/site/ui-icons";
 
 export type LightboxImage = { id: string; src: string; thumbnailSrc?: string; alt: string; width: number; height: number };
 
@@ -46,7 +46,7 @@ export function Lightbox({ images, active, onClose, onPrevious, onNext }: {
   if (!current) return null;
 
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 md:p-8" role="dialog" aria-modal="true" aria-label="Image viewer" onClick={onClose}>
-    <button type="button" onClick={onClose} className="absolute right-4 top-4 z-10 p-2 text-white/80 transition hover:text-white" aria-label="Close lightbox"><X size={24} strokeWidth={1.2} /></button>
+    <button type="button" onClick={onClose} className="absolute right-4 top-4 z-10 p-2 text-white/80 transition hover:text-white" aria-label="Close lightbox"><CloseIcon size={24} strokeWidth={1.2} /></button>
     <div
       className="relative max-h-[92svh] w-[95vw] max-w-[1200px]"
       style={{ aspectRatio: `${current.width} / ${current.height}`, touchAction: "none" }}
@@ -63,8 +63,8 @@ export function Lightbox({ images, active, onClose, onPrevious, onNext }: {
       }}
     >
       <img src={variantUrl(current.id, 3200)} alt={current.alt} width={current.width} height={current.height} decoding="async" fetchPriority="high" className="absolute inset-0 h-full w-full object-contain" />
-      <button type="button" onClick={(event) => { event.stopPropagation(); onPrevious(); }} className="absolute left-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Previous image"><ChevronLeft size={28} strokeWidth={1.2} /></button>
-      <button type="button" onClick={(event) => { event.stopPropagation(); onNext(); }} className="absolute right-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Next image"><ChevronRight size={28} strokeWidth={1.2} /></button>
+      <button type="button" onClick={(event) => { event.stopPropagation(); onPrevious(); }} className="absolute left-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Previous image"><ChevronLeftIcon size={28} strokeWidth={1.2} /></button>
+      <button type="button" onClick={(event) => { event.stopPropagation(); onNext(); }} className="absolute right-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Next image"><ChevronRightIcon size={28} strokeWidth={1.2} /></button>
     </div>
     <span className="absolute bottom-4 left-4 text-[10px] uppercase tracking-editorial text-white/65">{(active ?? 0) + 1} / {images.length}</span>
   </div>;

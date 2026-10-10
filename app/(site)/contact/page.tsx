@@ -1,10 +1,6 @@
 import { getSettings } from "@/lib/content";
-import {
-  Mail,
-  MessageCircle,
-  Phone,
-} from "lucide-react";
 import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
+import { MailIcon, MessageCircleIcon, PhoneIcon } from "@/components/site/ui-icons";
 
 export const metadata = {
   title: "Contact For Work",
@@ -29,21 +25,21 @@ export default async function ContactPage() {
             <div className="contact-items">
               {settings.email && (
                 <a href={`mailto:${settings.email}`} className="contact-item contact-email">
-                  <Mail size={20} strokeWidth={1.8} aria-hidden="true" />
+                  <MailIcon size={20} strokeWidth={1.8} />
                   <span>{settings.email}</span>
                 </a>
               )}
 
               {settings.phone && (
                 <a href={`tel:${settings.phone}`} className="contact-item">
-                  <Phone size={20} strokeWidth={1.8} aria-hidden="true" />
+                  <PhoneIcon size={20} strokeWidth={1.8} />
                   <span>{settings.phone}</span>
                 </a>
               )}
 
               {settings.zalo && (
                 <div className="contact-item">
-                  <MessageCircle size={20} strokeWidth={1.8} aria-hidden="true" />
+                  <MessageCircleIcon size={20} strokeWidth={1.8} />
                   <span>Zalo / {settings.zalo}</span>
                 </div>
               )}

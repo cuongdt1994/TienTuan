@@ -1,10 +1,20 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { nearestVariantWidth, preferredVariantFormat, variantContentType, variantKey } from "@/lib/image-variants";
+import { readImageSourceManifest } from "@/lib/image-source";
+import { createImageSourceToken } from "@/lib/image-source-auth";
 
 export const dynamic = "force-dynamic";
 
 const imageId = /^[A-Za-z0-9_-]{12,80}$/;
 type BucketLike = { get: (key: string) => Promise<{ body?: ReadableStream<Uint8Array>; size?: number; etag?: string; httpEtag?: string; httpMetadata?: { contentType?: string } } | null> };
+
+type TransformFetchInit = RequestInit & {
+  cf?: { image: { width: number; fit: "scale-down"; format: "avif" | "webp" | "jpeg"; quality: number } };
+};
+
+type VariantBucket = BucketLike & {
+  put: (key: string, value: ReadableStream<Uint8Array>, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }) => Promise<unknown>;
+};
 
 function cacheKey(request: Request, width: number, format: string) {
   const url = new URL(request.url);
@@ -14,6 +24,37 @@ function cacheKey(request: Request, width: number, format: string) {
 
 function notModified(etag: string | null, request: Request) {
   return Boolean(etag && request.headers.get("if-none-match") === etag);
+}
+
+async function generateMissingVariant(request: Request, id: string, width: number, format: string, bucket: VariantBucket, context: { ctx: { waitUntil: (promise: Promise<unknown>) => void } }) {
+  const secret = process.env.AUTH_SECRET ?? "";
+  if (!secret) return null;
+  const manifest = await readImageSourceManifest(bucket, id);
+  if (!manifest) return null;
+  const sourceUrl = new URL(`/img/source/${encodeURIComponent(id)}`, request.url).toString();
+  const transformed = await fetch(sourceUrl, {
+    headers: { "x-image-source-token": await createImageSourceToken(id, secret) },
+    cf: {
+      image: {
+        width,
+        fit: "scale-down",
+        format: format as "avif" | "webp" | "jpeg",
+        quality: format === "avif" ? 73 : format === "webp" ? 88 : 90,
+      },
+    },
+  } as TransformFetchInit);
+  if (!transformed.ok || !transformed.body) return null;
+  const responseHeaders = new Headers(transformed.headers);
+  responseHeaders.set("Cache-Control", "public, max-age=31536000, immutable");
+  responseHeaders.set("Content-Disposition", "inline");
+  responseHeaders.set("Content-Type", variantContentType(format as "avif" | "webp" | "jpeg"));
+  responseHeaders.set("Vary", "Accept");
+  responseHeaders.set("X-Content-Type-Options", "nosniff");
+  const response = new Response(transformed.clone().body, { headers: responseHeaders });
+  context.ctx.waitUntil(bucket.put(variantKey(id, width as 640 | 1280 | 1920 | 2560 | 3200, format as "avif" | "webp" | "jpeg"), transformed.body, {
+    httpMetadata: { contentType: variantContentType(format as "avif" | "webp" | "jpeg"), cacheControl: "public, max-age=31536000, immutable" },
+  }));
+  return response;
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +94,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       servedFormat = "webp";
       object = await bucket.get(variantKey(id, width, "webp"));
     }
-    if (!object?.body) return new Response("Image variant not found", { status: 404 });
+    if (!object?.body) {
+      const generated = await generateMissingVariant(request, id, width, servedFormat, bucket as VariantBucket, { ctx: context.ctx as { waitUntil: (promise: Promise<unknown>) => void } });
+      if (generated) {
+        if (cache) context.ctx.waitUntil(cache.put(requestCacheKey, generated.clone()));
+        return generated;
+      }
+      return new Response("Image variant not found", { status: 404 });
+    }
 
     const etag = object.httpEtag ?? object.etag ?? null;
     if (etag) responseHeaders.set("ETag", etag);

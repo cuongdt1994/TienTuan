@@ -125,7 +125,8 @@ export async function deleteObjectUrls(urls: string[]) {
 /** Remove all prepared variants for an image after its D1 row is deleted. */
 export async function deleteVariantObjects(imageIds: string[]) {
   const prefixes = [...new Set(imageIds.filter((id) => /^[A-Za-z0-9_-]{12,80}$/.test(id)).map((id) => `variants/${id}/`))];
-  if (!prefixes.length) return;
+  const manifests = [...new Set(imageIds.filter((id) => /^[A-Za-z0-9_-]{12,80}$/.test(id)).map((id) => `image-sources/${id}.json`))];
+  if (!prefixes.length && !manifests.length) return;
   const bucket = await r2Bucket();
   if (bucket) {
     for (const prefix of prefixes) {
@@ -137,6 +138,7 @@ export async function deleteVariantObjects(imageIds: string[]) {
         cursor = page.truncated ? page.cursor : undefined;
       } while (cursor);
     }
+    if (manifests.length) await bucket.delete(manifests);
     return;
   }
   for (const prefix of prefixes) {
@@ -144,4 +146,5 @@ export async function deleteVariantObjects(imageIds: string[]) {
     const keys = (page.Contents ?? []).map((object) => object.Key).filter((key): key is string => Boolean(key));
     if (keys.length) await s3.send(new DeleteObjectsCommand({ Bucket: env.MINIO_BUCKET, Delete: { Objects: keys.map((Key) => ({ Key })) } }));
   }
+  if (manifests.length) await s3.send(new DeleteObjectsCommand({ Bucket: env.MINIO_BUCKET, Delete: { Objects: manifests.map((Key) => ({ Key })) } }));
 }

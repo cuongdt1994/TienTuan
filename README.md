@@ -6,7 +6,8 @@ Next.js App Router + OpenNext deployed to a Cloudflare Worker, with D1 for metad
 
 - The browser uploads originals directly to R2 with a short-lived presigned PUT URL. The Worker never proxies the file upload.
 - Originals live under `originals/` and are private. Public pages only request `/img/{imageId}?w=...`.
-- Variants are created once outside the public request path. Files are stored as `variants/{imageId}/{width}.{format}` for widths 640, 1280, 1920, 2560 and 3200; formats are AVIF, WebP and JPEG.
+- After Admin upload, the Worker starts Cloudflare remote-image transformations in the background. The private source is exposed only to that internal subrequest with a short-lived HMAC token; Cloudflare performs decode/resize/encode and the Worker streams the result into `variants/{imageId}/{width}.{format}`.
+- The same automatic path supports originals around 22MB. A laptop does not need to stay on and `npm run variants` is not required for new uploads. If a background job is interrupted, the first public request recreates the missing variant and caches it.
 - `app/img/[id]/route.ts` checks the edge Cache API first, then streams `R2Object.body` directly. It never calls `arrayBuffer()`, `blob()`, Sharp, WASM or a canvas.
 - The local `sharp` dependency is used only by `scripts/make-variants.ts`; it is a dev dependency and is not imported by application/Worker code.
 - Public D1 reads are cached for five minutes and admin mutations purge the `site-content` tag.
@@ -18,7 +19,7 @@ Next.js App Router + OpenNext deployed to a Cloudflare Worker, with D1 for metad
 - Worker: `atelier-portfolio`
 - R2: `PHOTOGRAPHY_R2` → `photography`
 - D1: `ATELIER_PORTFOLIO_DB` → `atelier-portfolio-db`
-- Images binding: `IMAGES` for automatic processing of uploads up to Cloudflare's binding input limit
+- Images binding: retained for compatibility with the older local migration path; new uploads use remote transformations so they are not limited by the 20MB Images binding input limit
 - OpenNext incremental cache: `NEXT_INC_CACHE_R2_BUCKET`
 
 Create the resources if starting from a new account:
