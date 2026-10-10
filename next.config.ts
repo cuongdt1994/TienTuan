@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const imageOrigin = (() => {
   try {
-    return new URL(process.env.PUBLIC_IMAGE_BASE_URL ?? "http://10.100.101.22:9010/photography").origin;
+    return new URL(process.env.PUBLIC_IMAGE_BASE_URL ?? "https://media.tientuanphoto.com").origin;
   } catch {
-    return "http://10.100.101.22:9010";
+    return "https://media.tientuanphoto.com";
   }
 })();
 
@@ -32,8 +32,6 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  outputFileTracingRoot: process.cwd(),
   poweredByHeader: false,
   compress: true,
   reactStrictMode: true,
@@ -43,6 +41,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "localhost", port: "9000" },
       { protocol: "http", hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
       { protocol: "https", hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
+      { protocol: "https", hostname: "media.tientuanphoto.com", pathname: "/**" },
     ],
     // The production MinIO endpoint is a private IP by design. Keep the exception
     // scoped to that exact endpoint and bucket path; do not allow arbitrary local IPs.
@@ -63,3 +62,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());

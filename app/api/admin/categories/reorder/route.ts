@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { reorderIdsSchema } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
@@ -16,12 +16,13 @@ export async function POST(request: Request) {
   }
 
   const categories = await db.category.findMany({ select: { id: true } });
-  const knownIds = new Set(categories.map((category) => category.id));
+  const knownIds = new Set(categories.map((category: any) => category.id));
   if (parsed.data.ids.length !== categories.length || parsed.data.ids.some((id) => !knownIds.has(id))) {
     return NextResponse.json({ error: "Invalid order" }, { status: 400 });
   }
 
-  await db.$transaction(parsed.data.ids.map((id, index) => db.category.update({ where: { id }, data: { sortOrder: index } })));
+  const database: any = await getDb();
+  await database.$transaction(parsed.data.ids.map((id, index) => database.category.update({ where: { id }, data: { sortOrder: index } })));
   await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "CATEGORIES_REORDERED", entityType: "Category" });
   return NextResponse.json({ ok: true });
 }

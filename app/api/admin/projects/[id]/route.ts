@@ -32,7 +32,7 @@ export async function DELETE(_request: Request, context: Context) {
   const project = await db.project.findUnique({ where: { id }, include: { images: true } });
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
   try {
-    await deleteObjectUrls(project.images.flatMap((image) => [image.originalUrl, image.largeUrl, image.mediumUrl, image.thumbnailUrl]));
+    await deleteObjectUrls(project.images.flatMap((image: any) => [image.originalUrl, image.largeUrl, image.mediumUrl, image.thumbnailUrl]));
     await db.project.delete({ where: { id } });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "PROJECT_DELETED", entityType: "Project", entityId: id, metadata: { title: project.title } });
     return NextResponse.json({ ok: true });

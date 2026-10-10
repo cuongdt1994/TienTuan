@@ -34,7 +34,6 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
                   alt={`${name} avatar`}
                   fill
                   priority
-                  unoptimized
                   sizes="(max-width: 767px) 70vw, 420px"
                   className="object-cover"
                 />

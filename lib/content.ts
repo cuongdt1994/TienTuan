@@ -32,70 +32,71 @@ export async function getSettings() {
   }
 }
 
-export async function getPublishedProjects(categorySlug?: string) {
+export async function getPublishedProjects(categorySlug?: string): Promise<ProjectWithMedia[]> {
   try {
-    const projects = await db.project.findMany({
+    const projects = (await db.project.findMany({
       where: { status: "PUBLISHED", ...(categorySlug ? { category: { slug: categorySlug } } : {}) },
       include: { category: true, images: { where: { deletedAt: null }, take: 1, orderBy: { sortOrder: "asc" } }, coverImage: true },
       orderBy: { sortOrder: "asc" },
-    });
+    })) as ProjectWithMedia[];
     return projects;
   } catch {
     return [];
   }
 }
 
-export async function getPublishedProjectSlugs() {
+export async function getPublishedProjectSlugs(): Promise<Array<{ slug: string; updatedAt: Date }>> {
   try {
-    return await db.project.findMany({
+    return (await db.project.findMany({
       where: { status: "PUBLISHED" },
       select: { slug: true, updatedAt: true },
       orderBy: { sortOrder: "asc" },
-    });
+    })) as Array<{ slug: string; updatedAt: Date }>;
   } catch {
     return [];
   }
 }
 
-export async function getProject(slug: string) {
+export async function getProject(slug: string): Promise<ProjectWithMedia | null> {
   try {
-    const project = await db.project.findFirst({
+    const project = (await db.project.findFirst({
       where: { slug, status: "PUBLISHED" },
       include: { category: true, images: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } }, coverImage: true },
-    });
+    })) as ProjectWithMedia | null;
     return project;
   } catch {
     return null;
   }
 }
 
-export async function getPreviewProject(slug: string, previewToken: string) {
+export async function getPreviewProject(slug: string, previewToken: string): Promise<ProjectWithMedia | null> {
   if (!isPreviewTokenFresh(previewToken)) return null;
   try {
-    return await db.project.findFirst({
+    return (await db.project.findFirst({
       where: { slug, previewToken },
       include: { category: true, images: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } }, coverImage: true },
-    });
+    })) as ProjectWithMedia | null;
   } catch {
     return null;
   }
 }
 
-export async function getCategories() {
+export async function getCategories(): Promise<Category[]> {
   try {
-    const categories = await db.category.findMany({
+    const categories = (await db.category.findMany({
       where: { projects: { some: { status: "PUBLISHED" } } },
       orderBy: { sortOrder: "asc" },
-    });
+    })) as Category[];
     return categories;
   } catch {
     return [];
   }
 }
 
-export async function getCategoryBySlug(slug: string) {
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   try {
-    return await db.category.findUnique({ where: { slug } });
+    const categories = await getCategories();
+    return categories.find((category) => category.slug === slug) ?? null;
   } catch {
     return null;
   }

@@ -28,7 +28,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
   const image = await db.image.findFirst({ where: { id, deletedAt: null } });
   if (!image) return NextResponse.json({ error: "Image not found" }, { status: 404 });
   try {
-    await db.$transaction(async (transaction) => {
+    await db.$transaction(async (transaction: any) => {
       await transaction.image.update({ where: { id }, data: { deletedAt: new Date() } });
       await transaction.project.updateMany({ where: { id: image.projectId, coverImageId: id }, data: { coverImageId: null } });
     });

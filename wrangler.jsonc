@@ -1,0 +1,65 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "atelier-portfolio",
+	"compatibility_date": "2026-10-10",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"routes": [
+		{ "pattern": "tientuanphoto.com/*", "zone_name": "tientuanphoto.com" },
+		{ "pattern": "www.tientuanphoto.com/*", "zone_name": "tientuanphoto.com" }
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"vars": {
+		"NEXT_PUBLIC_SITE_URL": "https://tientuanphoto.com",
+		"PUBLIC_IMAGE_BASE_URL": "https://media.tientuanphoto.com",
+		"DATABASE_URL": "postgresql://cloudflare-d1-runtime/unused",
+		"MINIO_ENDPOINT": "r2.cloudflare.internal",
+		"MINIO_PORT": "443",
+		"MINIO_ACCESS_KEY": "r2-binding",
+		"MINIO_SECRET_KEY": "r2-binding",
+		"MINIO_BUCKET": "photography",
+		"MINIO_USE_SSL": "true",
+		"TRUST_PROXY_HEADERS": "true"
+	},
+	"services": [
+		{
+			// Self-reference service binding, the service name must match the worker name
+			// see https://opennext.js.org/cloudflare/caching
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "atelier-portfolio"
+		}
+	],
+	"r2_buckets": [
+		// Use R2 incremental cache
+		// See https://opennext.js.org/cloudflare/caching
+		{
+			"binding": "NEXT_INC_CACHE_R2_BUCKET",
+			// Create the bucket before deploying
+			// You can change the bucket name if you want
+			// See https://developers.cloudflare.com/workers/wrangler/commands/#r2-bucket-create
+			"bucket_name": "atelier-portfolio-opennext-cache"
+		},
+		{
+			"binding": "PHOTOGRAPHY_R2",
+			"bucket_name": "photography"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "ATELIER_PORTFOLIO_DB",
+			"database_name": "atelier-portfolio-db",
+			"database_id": "13c7af4c-b130-452a-8e7a-cb313c0a0695"
+		}
+	],
+	"images": {
+		// Enable image optimization
+		// see https://opennext.js.org/cloudflare/howtos/image
+		"binding": "IMAGES"
+	}
+}

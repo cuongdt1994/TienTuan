@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const parsed = projectSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid project" }, { status: 400 });
   try {
-    const project = await db.$transaction(async (transaction) => {
+    const project = await db.$transaction(async (transaction: any) => {
       await transaction.project.updateMany({ data: { sortOrder: { increment: 1 } } });
       return transaction.project.create({ data: { ...parsed.data, description: parsed.data.description || null, previewToken: randomBytes(24).toString("base64url"), sortOrder: 0, publishedAt: parsed.data.status === "PUBLISHED" ? new Date() : null }, include: { category: true, images: true, coverImage: true } });
     });
