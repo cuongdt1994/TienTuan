@@ -5,6 +5,7 @@ import slugify from "slugify";
 import { categoryCreateSchema } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { isSameOrigin } from "@/lib/request-security";
+import { invalidateSiteContent } from "@/lib/content-cache";
 
 export async function GET() { if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); const categories = await db.category.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { projects: true } } } }); return NextResponse.json({ categories }); }
 export async function POST(request: Request) {
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
     const max = await db.category.aggregate({ _max: { sortOrder: true } });
     const category = await db.category.create({ data: { name: parsed.data.name, slug, sortOrder: (max._max.sortOrder ?? -1) + 1 } });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "CATEGORY_CREATED", entityType: "Category", entityId: category.id, metadata: { name: category.name } });
+    invalidateSiteContent();
     return NextResponse.json({ category });
   } catch {
     return NextResponse.json({ error: "Could not create category. The name may already exist." }, { status: 409 });

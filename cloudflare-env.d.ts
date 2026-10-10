@@ -3,6 +3,8 @@ import type { D1Database } from "@cloudflare/workers-types";
 declare global {
   interface CloudflareEnv {
     ATELIER_PORTFOLIO_DB?: D1Database;
+    PHOTOGRAPHY_R2?: R2Bucket;
+    IMAGES?: ImagesBinding;
   }
 }
 

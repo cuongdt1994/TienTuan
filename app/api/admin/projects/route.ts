@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { projectSchema } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { isSameOrigin } from "@/lib/request-security";
+import { invalidateSiteContent } from "@/lib/content-cache";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
       return transaction.project.create({ data: { ...parsed.data, description: parsed.data.description || null, previewToken: randomBytes(24).toString("base64url"), sortOrder: 0, publishedAt: parsed.data.status === "PUBLISHED" ? new Date() : null }, include: { category: true, images: true, coverImage: true } });
     });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "PROJECT_CREATED", entityType: "Project", entityId: project.id, metadata: { status: project.status, categoryId: project.categoryId } });
+    invalidateSiteContent();
     return NextResponse.json({ project });
   } catch (error) {
     const message = error instanceof Error && error.message.includes("Unique") ? "That slug is already in use." : "Could not create project.";

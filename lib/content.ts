@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import type { Category, Image, Project, SiteSettings } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { isPreviewTokenFresh } from "@/lib/preview-token";
@@ -24,15 +25,21 @@ export const demoSettings: SiteSettings = {
   updatedAt: new Date(),
 };
 
-export async function getSettings() {
+// Public reads are cached in the OpenNext incremental cache backed by R2. This
+// keeps D1 out of the hot path while admin mutations invalidate the tag.
+const readSettings = unstable_cache(async () => {
   try {
     return (await db.siteSettings.findUnique({ where: { id: "site" } })) ?? demoSettings;
   } catch {
     return demoSettings;
   }
+}, ["site-settings"], { revalidate: 300, tags: ["site-content", "site-settings"] });
+
+export async function getSettings() {
+  return readSettings();
 }
 
-export async function getPublishedProjects(categorySlug?: string): Promise<ProjectWithMedia[]> {
+const readPublishedProjects = unstable_cache(async (categorySlug = ""): Promise<ProjectWithMedia[]> => {
   try {
     const projects = (await db.project.findMany({
       where: { status: "PUBLISHED", ...(categorySlug ? { category: { slug: categorySlug } } : {}) },
@@ -43,9 +50,13 @@ export async function getPublishedProjects(categorySlug?: string): Promise<Proje
   } catch {
     return [];
   }
+}, ["published-projects"], { revalidate: 300, tags: ["site-content", "published-projects"] });
+
+export async function getPublishedProjects(categorySlug?: string): Promise<ProjectWithMedia[]> {
+  return readPublishedProjects(categorySlug ?? "");
 }
 
-export async function getPublishedProjectSlugs(): Promise<Array<{ slug: string; updatedAt: Date }>> {
+const readPublishedProjectSlugs = unstable_cache(async (): Promise<Array<{ slug: string; updatedAt: Date }>> => {
   try {
     return (await db.project.findMany({
       where: { status: "PUBLISHED" },
@@ -55,9 +66,13 @@ export async function getPublishedProjectSlugs(): Promise<Array<{ slug: string; 
   } catch {
     return [];
   }
+}, ["published-project-slugs"], { revalidate: 300, tags: ["site-content", "published-project-slugs"] });
+
+export async function getPublishedProjectSlugs(): Promise<Array<{ slug: string; updatedAt: Date }>> {
+  return readPublishedProjectSlugs();
 }
 
-export async function getProject(slug: string): Promise<ProjectWithMedia | null> {
+const readProject = unstable_cache(async (slug: string): Promise<ProjectWithMedia | null> => {
   try {
     const project = (await db.project.findFirst({
       where: { slug, status: "PUBLISHED" },
@@ -67,6 +82,10 @@ export async function getProject(slug: string): Promise<ProjectWithMedia | null>
   } catch {
     return null;
   }
+}, ["published-project"], { revalidate: 300, tags: ["site-content", "published-projects"] });
+
+export async function getProject(slug: string): Promise<ProjectWithMedia | null> {
+  return readProject(slug);
 }
 
 export async function getPreviewProject(slug: string, previewToken: string): Promise<ProjectWithMedia | null> {
@@ -81,7 +100,7 @@ export async function getPreviewProject(slug: string, previewToken: string): Pro
   }
 }
 
-export async function getCategories(): Promise<Category[]> {
+const readCategories = unstable_cache(async (): Promise<Category[]> => {
   try {
     const categories = (await db.category.findMany({
       where: { projects: { some: { status: "PUBLISHED" } } },
@@ -91,6 +110,10 @@ export async function getCategories(): Promise<Category[]> {
   } catch {
     return [];
   }
+}, ["published-categories"], { revalidate: 300, tags: ["site-content", "published-categories"] });
+
+export async function getCategories(): Promise<Category[]> {
+  return readCategories();
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {

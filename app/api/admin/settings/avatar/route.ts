@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
-import sharp from "sharp";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { deleteObjectUrls, objectUrl, putObject, readObject } from "@/lib/minio";
+import { deleteObjectUrls, headObject, privateObjectRef } from "@/lib/minio";
 import { consumeRateLimit, getClientKey } from "@/lib/rate-limit";
-import { avatarProcessSchema, MAX_IMAGE_PIXELS, MAX_UPLOAD_BYTES } from "@/lib/validations";
+import { avatarProcessSchema, MAX_UPLOAD_BYTES } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { isSameOrigin } from "@/lib/request-security";
+import { invalidateSiteContent } from "@/lib/content-cache";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
@@ -19,33 +19,23 @@ export async function POST(request: Request) {
   const parsed = avatarProcessSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid avatar upload" }, { status: 400 });
 
-  const createdUrls: string[] = [];
   try {
-    const source = await readObject(parsed.data.objectKey);
-    if (!source.Body) throw new Error("Missing avatar body");
-    if (typeof source.ContentLength === "number" && source.ContentLength > MAX_UPLOAD_BYTES) {
-      await deleteObjectUrls([objectUrl(parsed.data.objectKey)]).catch(() => undefined);
+    const source = await headObject(parsed.data.objectKey);
+    if (!source.ContentLength || source.ContentLength > MAX_UPLOAD_BYTES) {
       return NextResponse.json({ error: "Avatar is too large" }, { status: 413 });
     }
-    const original = Buffer.from(await source.Body.transformToByteArray());
-    if (original.byteLength > MAX_UPLOAD_BYTES) {
-      await deleteObjectUrls([objectUrl(parsed.data.objectKey)]).catch(() => undefined);
-      return NextResponse.json({ error: "Avatar is too large" }, { status: 413 });
-    }
+    const context = await getCloudflareContext({ async: true });
+    const bucket = context.env.PHOTOGRAPHY_R2;
+    const images = context.env.IMAGES;
+    if (!bucket || !images) return NextResponse.json({ error: "Image processing is not configured" }, { status: 503 });
+    if (source.ContentLength > 20 * 1024 * 1024) return NextResponse.json({ error: "Avatar must be 20MB or smaller for automatic processing" }, { status: 413 });
+    const original = await bucket.get(parsed.data.objectKey);
+    if (!original?.body) throw new Error("Missing avatar body");
+    const output = await images.input(original.body).transform({ width: 900, height: 900, fit: "cover" }).output({ format: "image/webp", quality: 90 });
     const safeName = parsed.data.filename.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/\.[^.]+$/, "");
-    const key = `site/intro/avatar-${randomUUID()}-${safeName || "profile"}.webp`;
-    const normalized = sharp(original, { limitInputPixels: MAX_IMAGE_PIXELS }).rotate();
-    const metadata = await normalized.metadata();
-    if (!metadata.width || !metadata.height || !metadata.format || !["jpeg", "png", "webp", "avif"].includes(metadata.format)) {
-      await deleteObjectUrls([objectUrl(parsed.data.objectKey)]).catch(() => undefined);
-      return NextResponse.json({ error: "Unsupported or invalid avatar" }, { status: 400 });
-    }
-    const avatar = await normalized
-      .resize({ width: 900, height: 900, fit: "cover", position: "centre" })
-      .webp({ quality: 90 })
-      .toBuffer();
-    const avatarUrl = await putObject(key, avatar, "image/webp");
-    createdUrls.push(avatarUrl);
+    const key = `site/intro/avatar-${crypto.randomUUID()}-${safeName || "profile"}.webp`;
+    await bucket.put(key, output.image(), { httpMetadata: { contentType: "image/webp", cacheControl: "public, max-age=31536000, immutable" } });
+    const avatarUrl = `/media/${key}`;
     const current = await db.siteSettings.findUnique({ where: { id: "site" } });
     await db.siteSettings.upsert({
       where: { id: "site" },
@@ -53,15 +43,15 @@ export async function POST(request: Request) {
       create: { id: "site", introAvatarUrl: avatarUrl },
     });
 
-    await deleteObjectUrls([objectUrl(parsed.data.objectKey)]).catch(() => undefined);
+    await deleteObjectUrls([privateObjectRef(parsed.data.objectKey)]).catch(() => undefined);
     if (current?.introAvatarUrl && current.introAvatarUrl !== avatarUrl) {
       await deleteObjectUrls([current.introAvatarUrl]).catch((error) => console.error("Could not remove previous avatar", error));
     }
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "AVATAR_UPDATED", entityType: "SiteSettings", entityId: "site" });
+    invalidateSiteContent();
     return NextResponse.json({ avatarUrl });
   } catch (error) {
-    if (createdUrls.length) await deleteObjectUrls(createdUrls).catch(() => undefined);
-    await deleteObjectUrls([objectUrl(parsed.data.objectKey)]).catch(() => undefined);
+    await deleteObjectUrls([privateObjectRef(parsed.data.objectKey)]).catch(() => undefined);
     console.error("Avatar processing failed", error);
     return NextResponse.json({ error: "Avatar processing failed" }, { status: 500 });
   }
@@ -75,5 +65,6 @@ export async function DELETE(request: Request) {
   await db.siteSettings.upsert({ where: { id: "site" }, update: { introAvatarUrl: null }, create: { id: "site", introAvatarUrl: null } });
   if (current?.introAvatarUrl) await deleteObjectUrls([current.introAvatarUrl]).catch((error) => console.error("Could not remove avatar", error));
   await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "AVATAR_REMOVED", entityType: "SiteSettings", entityId: "site" });
+  invalidateSiteContent();
   return NextResponse.json({ avatarUrl: null });
 }

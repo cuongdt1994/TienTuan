@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2, GripVertical, LoaderCircle, Pause, Play, RotateCcw, UploadCloud, X } from "lucide-react";
 import { browserImageUrl } from "@/lib/media-url";
-import { uploadAdminFile } from "@/components/admin/upload-client";
+import { getImageDimensions, uploadAdminFile } from "@/components/admin/upload-client";
 
 type UploadStatus = "ready" | "uploading" | "processing" | "done" | "error";
 type UploadItem = { id: string; name: string; file: File; preview: string; progress: number; status: UploadStatus; attempts: number; error?: string };
@@ -46,10 +46,11 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
   async function uploadOnce(file: File, itemId: string) {
     const controller = new AbortController();
     abortRef.current.set(itemId, controller);
+    const dimensions = await getImageDimensions(file);
     const { objectKey } = await uploadAdminFile(file, (progress) => updateItem(itemId, { progress }), controller.signal);
     abortRef.current.delete(itemId);
     updateItem(itemId, { status: "processing", progress: 85 });
-    const processResponse = await fetch(`/api/admin/projects/${projectId}/images/process`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ objectKey, filename: file.name, contentType: file.type }) });
+    const processResponse = await fetch(`/api/admin/projects/${projectId}/images/process`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ objectKey, filename: file.name, contentType: file.type, ...dimensions }) });
     if (!processResponse.ok) throw new Error("Could not process image");
     return (await processResponse.json()).image as UploadedImage;
   }
@@ -90,7 +91,7 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
   }
 
   function addFiles(files: FileList | File[]) {
-    const valid = Array.from(files).filter((file) => file.type.startsWith("image/") && file.size <= 50 * 1024 * 1024);
+    const valid = Array.from(files).filter((file) => file.type.startsWith("image/") && file.size <= 50 * 1024 * 1024).slice(0, 20);
     const newItems = valid.map((file) => ({ id: `${file.name}-${file.lastModified}-${Math.random()}`, name: file.name, file, preview: URL.createObjectURL(file), progress: 0, status: "ready" as const, attempts: 0 }));
     itemsRef.current = [...itemsRef.current, ...newItems];
     setItems(itemsRef.current);
@@ -123,7 +124,7 @@ export function ProjectUploader({ projectId, onUploaded }: { projectId: string; 
   }
 
   return <section className="space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted">Upload tối đa 20 ảnh cùng lúc · tự động thử lại nếu lỗi.</p><button type="button" onClick={togglePaused} className="flex items-center gap-2 text-[10px] uppercase tracking-editorial underline underline-offset-4">{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? "Resume queue" : "Pause queue"}</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted">Upload tối đa 20 ảnh cùng lúc · ảnh lớn sẽ chờ tạo biến thể local.</p><button type="button" onClick={togglePaused} className="flex items-center gap-2 text-[10px] uppercase tracking-editorial underline underline-offset-4">{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? "Resume queue" : "Pause queue"}</button></div>
     <label onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); addFiles(event.dataTransfer.files); }} className={`flex min-h-48 cursor-pointer flex-col items-center justify-center border border-dashed ${dragging ? "border-ink bg-fog" : "border-line bg-paper"} p-8 text-center transition-colors`}>
       <UploadCloud size={24} strokeWidth={1.2} />
       <span className="mt-4 text-sm">Drop images here</span>

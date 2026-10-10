@@ -7,6 +7,7 @@ export default defineConfig([
   ...nextTypescript,
   globalIgnores([
     ".next/**",
+    ".open-next/**",
     "node_modules/**",
     "generated/**",
     "tsconfig.tsbuildinfo",

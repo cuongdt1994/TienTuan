@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { categoryUpdateSchema } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { isSameOrigin } from "@/lib/request-security";
+import { invalidateSiteContent } from "@/lib/content-cache";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -25,6 +26,7 @@ export async function PATCH(request: Request, context: Context) {
       },
     });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "CATEGORY_UPDATED", entityType: "Category", entityId: id, metadata: { changed: Object.keys(parsed.data) } });
+    invalidateSiteContent();
     return NextResponse.json({ category });
   } catch {
     return NextResponse.json({ error: "Could not update category. The name may already exist." }, { status: 409 });
@@ -45,6 +47,7 @@ export async function DELETE(_request: Request, context: Context) {
   try {
     await db.category.delete({ where: { id } });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "CATEGORY_DELETED", entityType: "Category", entityId: id });
+    invalidateSiteContent();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Category not found." }, { status: 404 });

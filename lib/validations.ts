@@ -54,6 +54,8 @@ export const imageProcessSchema = z.object({
   objectKey: z.string().regex(/^originals\/[A-Za-z0-9_-]{20,}-[A-Za-z0-9._-]{1,180}$/, "Invalid upload object"),
   filename: safeFilename,
   contentType: z.enum(IMAGE_TYPES),
+  width: z.number().int().positive().max(20000),
+  height: z.number().int().positive().max(20000),
 });
 
 export const avatarProcessSchema = z.object({

@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://tientuanphoto.com",
+          "https://www.tientuanphoto.com"
+        ],
+        "methods": ["PUT", "HEAD"],
+        "headers": ["Content-Type"]
+      },
+      "expose": ["ETag"],
+      "max_age_seconds": 3600
+    }
+  ]
+}

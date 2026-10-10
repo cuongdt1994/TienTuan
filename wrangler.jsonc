@@ -9,7 +9,8 @@
 	],
 	"routes": [
 		{ "pattern": "tientuanphoto.com/*", "zone_name": "tientuanphoto.com" },
-		{ "pattern": "www.tientuanphoto.com/*", "zone_name": "tientuanphoto.com" }
+		{ "pattern": "www.tientuanphoto.com/*", "zone_name": "tientuanphoto.com" },
+		{ "pattern": "media.tientuanphoto.com/*", "zone_name": "tientuanphoto.com" }
 	],
 	"assets": {
 		"directory": ".open-next/assets",
@@ -17,7 +18,7 @@
 	},
 	"vars": {
 		"NEXT_PUBLIC_SITE_URL": "https://tientuanphoto.com",
-		"PUBLIC_IMAGE_BASE_URL": "https://media.tientuanphoto.com",
+		"R2_ACCOUNT_ID": "7548e7178cc0fccea6d8373c4a050eef",
 		"DATABASE_URL": "postgresql://cloudflare-d1-runtime/unused",
 		"MINIO_ENDPOINT": "r2.cloudflare.internal",
 		"MINIO_PORT": "443",

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readObject } from "@/lib/minio";
 
-const validKey = /^(?:originals|projects|site\/intro)\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/;
+const validKey = /^(?:variants|site\/intro)\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/;
 const imageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
 export async function mediaResponse(key: string) {

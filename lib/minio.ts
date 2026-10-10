@@ -1,11 +1,9 @@
 import "server-only";
-import type { Readable } from "node:stream";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { CreateBucketCommand, DeleteObjectsCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CreateBucketCommand, DeleteObjectsCommand, GetObjectCommand, HeadBucketCommand, HeadObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { env } from "@/lib/env";
 
 type R2Body = {
-  transformToByteArray: () => Promise<Uint8Array>;
   transformToWebStream: () => ReadableStream;
 };
 
@@ -14,13 +12,13 @@ type R2ObjectLike = {
   size?: number;
   etag?: string;
   httpMetadata?: { contentType?: string };
-  arrayBuffer: () => Promise<ArrayBuffer>;
 };
 
 type R2BucketLike = {
   head: (key: string) => Promise<R2ObjectLike | null>;
   get: (key: string) => Promise<R2ObjectLike | null>;
   put: (key: string, value: ArrayBuffer | Uint8Array | string, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }) => Promise<unknown>;
+  list: (options?: { prefix?: string; cursor?: string; limit?: number }) => Promise<{ objects: Array<{ key: string }>; truncated?: boolean; cursor?: string }>;
   delete: (keys: string | string[]) => Promise<void>;
 };
 
@@ -50,20 +48,12 @@ async function r2Bucket() {
 function r2Object(object: R2ObjectLike): StorageObject {
   return {
     Body: object.body ? {
-      transformToByteArray: async () => new Uint8Array(await object.arrayBuffer()),
       transformToWebStream: () => object.body as ReadableStream,
     } : undefined,
     ContentLength: object.size,
     ContentType: object.httpMetadata?.contentType,
     ETag: object.etag,
   };
-}
-
-async function toBuffer(body: Buffer | Readable) {
-  if (Buffer.isBuffer(body)) return body;
-  const chunks: Buffer[] = [];
-  for await (const chunk of body) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  return Buffer.concat(chunks);
 }
 
 export async function ensureBucket() {
@@ -76,9 +66,8 @@ export async function ensureBucket() {
   }
 }
 
-export function objectUrl(key: string) {
-  if (env.PUBLIC_IMAGE_BASE_URL) return `${env.PUBLIC_IMAGE_BASE_URL.replace(/\/$/, "")}/${key}`;
-  return `${env.MINIO_USE_SSL ? "https" : "http"}://${env.MINIO_ENDPOINT}:${env.MINIO_PORT}/${env.MINIO_BUCKET}/${key}`;
+export function privateObjectRef(key: string) {
+  return `r2://${env.MINIO_BUCKET}/${key}`;
 }
 
 export async function readObject(key: string): Promise<StorageObject> {
@@ -91,27 +80,21 @@ export async function readObject(key: string): Promise<StorageObject> {
   return s3.send(new GetObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key })) as Promise<StorageObject>;
 }
 
-export async function putObject(key: string, body: Buffer | Readable, contentType: string, size?: number) {
+export async function headObject(key: string): Promise<Pick<StorageObject, "ContentLength" | "ContentType" | "ETag">> {
   const bucket = await r2Bucket();
   if (bucket) {
-    await bucket.put(key, await toBuffer(body), {
-      httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
-    });
-    return objectUrl(key);
+    const object = await bucket.head(key);
+    return object ? { ContentLength: object.size, ContentType: object.httpMetadata?.contentType, ETag: object.etag } : {};
   }
-  await s3.send(new PutObjectCommand({
-    Bucket: env.MINIO_BUCKET,
-    Key: key,
-    Body: body,
-    ContentType: contentType,
-    ...(size ? { ContentLength: size } : {}),
-    CacheControl: "public, max-age=31536000, immutable",
-  }));
-  return objectUrl(key);
+  return s3.send(new HeadObjectCommand({ Bucket: env.MINIO_BUCKET, Key: key })) as Promise<Pick<StorageObject, "ContentLength" | "ContentType" | "ETag">>;
 }
 
 export function objectKeyFromUrl(value: string) {
   try {
+    if (value.startsWith("r2://")) {
+      const parsed = new URL(value);
+      return decodeURIComponent(parsed.pathname.slice(1));
+    }
     const parsed = new URL(value);
     const publicBase = env.PUBLIC_IMAGE_BASE_URL?.replace(/\/$/, "");
     if (publicBase && value.startsWith(`${publicBase}/`)) return decodeURIComponent(parsed.pathname.slice(1));
@@ -136,5 +119,29 @@ export async function deleteObjectUrls(urls: string[]) {
     const chunk = keys.slice(index, index + 1000);
     const result = await s3.send(new DeleteObjectsCommand({ Bucket: env.MINIO_BUCKET, Delete: { Objects: chunk.map((Key) => ({ Key })) } }));
     if (result.Errors?.length) throw new Error(`Could not delete ${result.Errors.length} image objects`);
+  }
+}
+
+/** Remove all prepared variants for an image after its D1 row is deleted. */
+export async function deleteVariantObjects(imageIds: string[]) {
+  const prefixes = [...new Set(imageIds.filter((id) => /^[A-Za-z0-9_-]{12,80}$/.test(id)).map((id) => `variants/${id}/`))];
+  if (!prefixes.length) return;
+  const bucket = await r2Bucket();
+  if (bucket) {
+    for (const prefix of prefixes) {
+      let cursor: string | undefined;
+      do {
+        const page = await bucket.list({ prefix, cursor, limit: 1000 });
+        const keys = page.objects.map((object) => object.key);
+        if (keys.length) await bucket.delete(keys);
+        cursor = page.truncated ? page.cursor : undefined;
+      } while (cursor);
+    }
+    return;
+  }
+  for (const prefix of prefixes) {
+    const page = await s3.send(new ListObjectsV2Command({ Bucket: env.MINIO_BUCKET, Prefix: prefix }));
+    const keys = (page.Contents ?? []).map((object) => object.Key).filter((key): key is string => Boolean(key));
+    if (keys.length) await s3.send(new DeleteObjectsCommand({ Bucket: env.MINIO_BUCKET, Delete: { Objects: keys.map((Key) => ({ Key })) } }));
   }
 }

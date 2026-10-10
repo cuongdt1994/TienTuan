@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { variantUrl } from "@/lib/image-variants";
 
-export type LightboxImage = { src: string; thumbnailSrc?: string; alt: string; width: number; height: number };
+export type LightboxImage = { id: string; src: string; thumbnailSrc?: string; alt: string; width: number; height: number };
 
 export function Lightbox({ images, active, onClose, onPrevious, onNext }: {
   images: LightboxImage[];
@@ -39,7 +39,7 @@ export function Lightbox({ images, active, onClose, onPrevious, onNext }: {
     [next, previous].forEach((image) => {
       const preloaded = new window.Image();
       preloaded.decoding = "async";
-      preloaded.src = image.src;
+      preloaded.src = variantUrl(image.id, 3200);
     });
   }, [active, images]);
 
@@ -62,7 +62,7 @@ export function Lightbox({ images, active, onClose, onPrevious, onNext }: {
         touchStartX.current = null;
       }}
     >
-      <Image src={current.src} alt={current.alt} fill sizes="95vw" className="object-contain" unoptimized priority />
+      <img src={variantUrl(current.id, 3200)} alt={current.alt} width={current.width} height={current.height} decoding="async" fetchPriority="high" className="absolute inset-0 h-full w-full object-contain" />
       <button type="button" onClick={(event) => { event.stopPropagation(); onPrevious(); }} className="absolute left-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Previous image"><ChevronLeft size={28} strokeWidth={1.2} /></button>
       <button type="button" onClick={(event) => { event.stopPropagation(); onNext(); }} className="absolute right-2 top-1/2 z-10 -translate-y-1/2 p-3 text-white/75 transition hover:text-white" aria-label="Next image"><ChevronRight size={28} strokeWidth={1.2} /></button>
     </div>

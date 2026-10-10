@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
   compress: true,
   reactStrictMode: true,
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "9000" },
       { protocol: "https", hostname: "localhost", port: "9000" },

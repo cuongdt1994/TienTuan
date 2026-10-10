@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
-import { isOriginalMediaUrl } from "@/lib/media-url";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -30,14 +28,13 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
           <div className="mx-auto w-full max-w-[230px] animate-fade-in md:max-w-[300px]">
             <div className="relative aspect-square overflow-hidden rounded-full bg-fog">
               {avatarUrl ? (
-                <Image
+                <img
                   src={avatarUrl}
                   alt={`${name} avatar`}
-                  fill
-                  priority
-                  unoptimized={isOriginalMediaUrl(avatarUrl)}
-                  sizes="(max-width: 767px) 70vw, 420px"
-                  className="object-cover"
+                  width={900}
+                  height={900}
+                  fetchPriority="high"
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center px-10 text-center font-brand text-5xl">{name}</div>

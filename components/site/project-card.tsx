@@ -1,24 +1,21 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import type { ProjectWithMedia } from "@/lib/content";
-import { browserImageUrl, isOriginalMediaUrl } from "@/lib/media-url";
+import { ResponsiveImage } from "@/components/site/responsive-image";
 
 export function ProjectCard({ project, priority = false, index = 0, aspectRatio }: { project: ProjectWithMedia; priority?: boolean; index?: number; aspectRatio?: string }) {
   const image = project.coverImage ?? project.images[0];
   if (!image) return null;
-  const imageSrc = browserImageUrl(image.largeUrl);
   return (
     <Link href={`/${project.slug}` as Route} className={`group block animate-fade-up [animation-delay:${Math.min(index * 90, 540)}ms]`}>
       <div className="relative aspect-[4/3] overflow-hidden bg-paper" style={aspectRatio ? { aspectRatio } : undefined}>
-        <Image
-          src={imageSrc}
+        <ResponsiveImage
+          imageId={image.id}
           alt={image.alt ?? `${project.title} cover`}
-          fill
-          priority={priority}
-          unoptimized={isOriginalMediaUrl(imageSrc)}
-          quality={95}
+          width={image.width}
+          height={image.height}
           sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
+          priority={priority}
           className="object-cover transition duration-700 ease-out group-hover:scale-[1.012]"
           style={{ objectPosition: `${project.coverPositionX}% ${project.coverPositionY}%` }}
         />

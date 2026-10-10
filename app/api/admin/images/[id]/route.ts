@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { imagePatchSchema } from "@/lib/validations";
 import { isSameOrigin } from "@/lib/request-security";
+import { invalidateSiteContent } from "@/lib/content-cache";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
@@ -17,6 +18,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   if (body.data.cover) await db.project.update({ where: { id: image.projectId }, data: { coverImageId: image.id } });
   const updated = await db.image.update({ where: { id }, data: { ...(body.data.alt !== undefined ? { alt: body.data.alt } : {}) } });
   await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: body.data.cover ? "IMAGE_SET_AS_COVER" : "IMAGE_UPDATED", entityType: "Image", entityId: id, metadata: { projectId: image.projectId } });
+  invalidateSiteContent();
   return NextResponse.json({ image: updated });
 }
 
@@ -33,6 +35,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
       await transaction.project.updateMany({ where: { id: image.projectId, coverImageId: id }, data: { coverImageId: null } });
     });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "IMAGE_TRASHED", entityType: "Image", entityId: id, metadata: { projectId: image.projectId } });
+    invalidateSiteContent();
     return NextResponse.json({ ok: true, undoAvailable: true });
   } catch (error) {
     console.error("Image deletion failed", error);

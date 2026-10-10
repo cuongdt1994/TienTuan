@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
+import { invalidateSiteContent } from "@/lib/content-cache";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const user = await requireAdmin();
@@ -11,5 +12,6 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   if (!image) return NextResponse.json({ error: "Image is not in trash" }, { status: 404 });
   const restored = await db.image.update({ where: { id }, data: { deletedAt: null } });
   await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "IMAGE_RESTORED", entityType: "Image", entityId: id, metadata: { projectId: image.projectId } });
+  invalidateSiteContent();
   return NextResponse.json({ image: restored });
 }

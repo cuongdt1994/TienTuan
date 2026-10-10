@@ -1,91 +1,106 @@
-# Tien Tuan Photography Portfolio
+# Tien Tuan Photography — Cloudflare portfolio
 
-A self-hosted photography portfolio and lightweight CMS built with Next.js App Router, TypeScript, Tailwind CSS, PostgreSQL, Prisma, MinIO, Sharp, Zod, and dnd-kit.
+Next.js App Router + OpenNext deployed to a Cloudflare Worker, with D1 for metadata and a private R2 bucket for originals and prepared public variants.
 
-The public experience is image-led: large editorial project covers, preserved aspect ratios, a responsive masonry gallery, a keyboard-friendly lightbox, lightweight motion, and project-level SEO. The admin workflow keeps image management out of the codebase: sign in, create a project, drag in a batch of images, reorder them, choose a cover, and publish.
+## Image architecture
 
-## Requirements
+- The browser uploads originals directly to R2 with a short-lived presigned PUT URL. The Worker never proxies the file upload.
+- Originals live under `originals/` and are private. Public pages only request `/img/{imageId}?w=...`.
+- Variants are created once outside the public request path. Files are stored as `variants/{imageId}/{width}.{format}` for widths 640, 1280, 1920, 2560 and 3200; formats are AVIF, WebP and JPEG.
+- `app/img/[id]/route.ts` checks the edge Cache API first, then streams `R2Object.body` directly. It never calls `arrayBuffer()`, `blob()`, Sharp, WASM or a canvas.
+- The local `sharp` dependency is used only by `scripts/make-variants.ts`; it is a dev dependency and is not imported by application/Worker code.
+- Public D1 reads are cached for five minutes and admin mutations purge the `site-content` tag.
 
-- Node.js 22+
-- npm 10+
-- PostgreSQL 16+
-- MinIO (or another S3-compatible object store)
-- Docker and Docker Compose for the containerized setup
+## Cloudflare resources
 
-## Installation
+`wrangler.jsonc` defines:
+
+- Worker: `atelier-portfolio`
+- R2: `PHOTOGRAPHY_R2` → `photography`
+- D1: `ATELIER_PORTFOLIO_DB` → `atelier-portfolio-db`
+- Images binding: `IMAGES` for automatic processing of uploads up to Cloudflare's binding input limit
+- OpenNext incremental cache: `NEXT_INC_CACHE_R2_BUCKET`
+
+Create the resources if starting from a new account:
+
+```bash
+npx wrangler r2 bucket create photography
+npx wrangler r2 bucket create atelier-portfolio-opennext-cache
+npx wrangler d1 create atelier-portfolio-db
+npx wrangler d1 migrations apply atelier-portfolio-db --remote
+```
+
+Apply browser-upload CORS after checking the allowed production origins:
+
+```bash
+npx wrangler r2 bucket cors set photography --file config/r2-cors.json
+```
+
+## Secrets required for admin uploads
+
+Create an R2 API token scoped to the `photography` bucket with object read/write permission. Store its S3 credentials as Worker secrets; never commit them:
+
+```bash
+npx wrangler secret put R2_S3_ACCESS_KEY_ID --name atelier-portfolio
+npx wrangler secret put R2_S3_SECRET_ACCESS_KEY --name atelier-portfolio
+```
+
+`AUTH_SECRET` is also required. The presign endpoint returns `503` rather than falling back to a Worker upload when the R2 S3 secrets are absent.
+
+## Migrate existing originals and create variants
+
+The script downloads one original at a time on the local machine, converts to sRGB, applies EXIF orientation, strips metadata through the output pipeline, creates the five widths and three formats, uploads them to R2, then rewrites D1 URLs to `/img/{id}?w=...`:
+
+```bash
+npm install
+npm run typecheck
+npm run variants
+```
+
+For a safe smoke test:
+
+```powershell
+$env:VARIANT_LIMIT = "1"
+npm run variants
+```
+
+Do not run this conversion in the Worker. The local process may buffer a source image; the Worker never does.
+
+## Build and deploy
+
+```bash
+npm run typecheck
+npm run build
+npx opennextjs-cloudflare build
+npx opennextjs-cloudflare deploy
+```
+
+After verifying `/img/{id}?w=640` through the Worker for every migrated image, remove the old public R2 custom domain so `originals/` cannot be fetched publicly:
+
+```bash
+npx wrangler r2 bucket domain list photography
+npx wrangler r2 bucket domain remove photography --domain media.tientuanphoto.com
+```
+
+Keep the main site route on `tientuanphoto.com/*`; only the Worker exposes public image variants.
+
+## Local development
 
 ```bash
 npm install
 cp .env.example .env
 npx prisma generate
-npx prisma migrate dev --name init
-npm run prisma:seed
 npm run dev
 ```
 
-Open `http://localhost:3000`. The admin lives at `http://localhost:3000/admin/login`.
+Cloudflare production data is accessed through the D1 binding. Local PostgreSQL/MinIO settings remain available for development compatibility, but production image paths use R2 and the `/img` route.
 
-## Environment variables
+## Important files
 
-See `.env.example`. The important values are:
-
-- `DATABASE_URL` — PostgreSQL connection string.
-- `AUTH_SECRET` — at least 16 random characters; use a long random value in production.
-- `ADMIN_EMAIL` and `ADMIN_PASSWORD` — used by the seed command to create/update the admin user.
-- `MINIO_*` — S3-compatible storage connection details.
-- `PUBLIC_IMAGE_BASE_URL` — public bucket base URL, for example `https://cdn.example.com/photography`.
-
-Never commit `.env` or real credentials.
-
-## Prisma migration and admin
-
-```bash
-npx prisma migrate dev --name init
-npm run prisma:seed
-```
-
-The seed creates the admin account, three categories, demo projects, and site settings. Change `ADMIN_PASSWORD` before using the app outside local development.
-
-## MinIO setup
-
-The Docker Compose file starts MinIO on port `9000` and its console on `9001`. Create a bucket named `photography` and configure a read-only public policy for the image path, or put a CDN/reverse proxy in front of it and set `PUBLIC_IMAGE_BASE_URL` accordingly.
-
-After MinIO is available, the bucket can be bootstrapped with `npm run minio:setup`. The command is safe to run repeatedly.
-
-The browser uploads originals with a presigned URL. The server then reads the object, applies EXIF orientation with Sharp, and writes WebP variants at approximately 2560px, 1400px, and 720px widths. PostgreSQL only stores image metadata and URLs, never binary image data.
-
-## Docker setup
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-The web container runs `prisma migrate deploy` on startup. Run the seed once after the services are healthy:
-
-```bash
-docker compose exec web npx prisma db seed
-```
-
-## Production deployment
-
-1. Generate a unique `AUTH_SECRET`.
-2. Use managed PostgreSQL or a persistent PostgreSQL volume.
-3. Use a persistent MinIO volume or managed S3-compatible storage.
-4. Set a real `NEXT_PUBLIC_SITE_URL` and `PUBLIC_IMAGE_BASE_URL`.
-5. Put TLS and an image cache/CDN in front of the app and object store.
-6. Run `docker compose up -d --build`.
-
-## Backups
-
-Back up PostgreSQL with `pg_dump` or your provider's point-in-time backups. Back up MinIO using `mc mirror` or a provider replication policy; the original objects and processed WebP variants are both needed for a full restore.
-
-## Routes
-
-Public: `/`, `/work`, `/commercial`, `/beauty`, `/portrait`, `/project/[slug]`, `/contact`.
-
-Admin: `/admin/login`, `/admin`, `/admin/projects`, `/admin/projects/new`, `/admin/categories`, `/admin/media`, `/admin/settings`.
-
-## Notes
-
-The demo content uses Unsplash URLs so a fresh install has a meaningful fallback before a MinIO bucket is configured. Once the database is seeded and projects are uploaded, database content takes over automatically. The reference site informed the restraint, typography, and image-first rhythm only; this is a separate implementation and layout.
+- `app/img/[id]/route.ts` — cached, stream-only public image route
+- `app/api/admin/upload/presign/route.ts` — short-lived direct-to-R2 upload URL
+- `app/api/admin/projects/[id]/images/process/route.ts` — metadata registration and variant scheduling
+- `scripts/make-variants.ts` — local-only Sharp conversion/upload script
+- `lib/content.ts` — cached D1-backed public content reads
+- `lib/db.ts` — prepared D1 statements with explicit column lists
+- `migrations/0001_portfolio.sql` — idempotent D1 bootstrap schema

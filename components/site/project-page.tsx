@@ -5,6 +5,7 @@ import { JustifiedGallery } from "@/components/site/justified-gallery";
 import { ProjectGrid } from "@/components/site/project-grid";
 import { browserImageUrl } from "@/lib/media-url";
 import { ProjectStructuredData } from "@/components/site/structured-data";
+import { variantUrl } from "@/lib/image-variants";
 
 function shuffle<T>(items: T[]) {
   const shuffled = [...items];
@@ -37,7 +38,7 @@ export async function getProjectPageMetadata(slug: string, previewToken?: string
 export async function ProjectPage({ slug, previewToken }: { slug: string; previewToken?: string }) {
   const [project, publishedProjects] = await Promise.all([previewToken ? getPreviewProject(slug, previewToken) : getProject(slug), getPublishedProjects()]);
   if (!project) notFound();
-  const images = project.images.map((image) => ({ src: browserImageUrl(image.originalUrl), thumbnailSrc: browserImageUrl(image.largeUrl), alt: image.alt ?? `${project.title} - Photo ${String(image.sortOrder + 1).padStart(2, "0")}`, width: image.width, height: image.height }));
+  const images = project.images.map((image) => ({ id: image.id, src: variantUrl(image.id, 3200), thumbnailSrc: variantUrl(image.id, 1920), alt: image.alt ?? `${project.title} - Photo ${String(image.sortOrder + 1).padStart(2, "0")}`, width: image.width, height: image.height }));
   const relatedProjects = shuffle(publishedProjects.filter((item) => item.slug !== project.slug)).slice(0, 4);
   return <main className="pb-20 pt-16 md:pb-32 md:pt-28">
     <ProjectStructuredData project={project} />

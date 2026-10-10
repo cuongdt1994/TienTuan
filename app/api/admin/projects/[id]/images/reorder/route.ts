@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { reorderIdsSchema } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { isSameOrigin } from "@/lib/request-security";
+import { invalidateSiteContent } from "@/lib/content-cache";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
@@ -25,5 +26,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const database: any = await getDb();
   await database.$transaction(ids.map((imageId: string, index: number) => database.image.update({ where: { id: imageId }, data: { sortOrder: index } })));
   await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "IMAGES_REORDERED", entityType: "Project", entityId: projectId });
+  invalidateSiteContent();
   return NextResponse.json({ ok: true });
 }
