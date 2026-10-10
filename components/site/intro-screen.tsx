@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { FacebookIcon, InstagramIcon } from "@/components/site/social-icons";
+import { isOriginalMediaUrl } from "@/lib/media-url";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -34,6 +35,7 @@ export function IntroScreen({ name, avatarUrl, instagram, facebook }: IntroScree
                   alt={`${name} avatar`}
                   fill
                   priority
+                  unoptimized={isOriginalMediaUrl(avatarUrl)}
                   sizes="(max-width: 767px) 70vw, 420px"
                   className="object-cover"
                 />

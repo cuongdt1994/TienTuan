@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Lightbox, type LightboxImage } from "@/components/site/lightbox";
+import { isOriginalMediaUrl } from "@/lib/media-url";
 
 type GalleryRow = {
   images: LightboxImage[];
@@ -88,12 +89,14 @@ export function JustifiedGallery({ images }: { images: LightboxImage[] }) {
         {rows.map((row, rowIndex) => <div key={`row-${rowIndex}`} className="project-detail-row" style={{ gap, height: row.height, gridTemplateColumns: row.widths.map((itemWidth) => `${itemWidth}px`).join(" ") }}>
           {row.images.map((image, index) => {
             const imageIndex = imageIndexes[rowIndex][index];
+            const imageSrc = image.thumbnailSrc ?? image.src;
             return <button key={`${image.src}-${imageIndex}`} type="button" onClick={() => setActive(imageIndex)} className="group relative min-w-0 overflow-hidden bg-paper text-left" aria-label={`Open ${image.alt}`}>
               <Image
-                src={image.thumbnailSrc ?? image.src}
+                src={imageSrc}
                 alt={image.alt}
                 fill
                 priority={imageIndex < 4}
+                unoptimized={isOriginalMediaUrl(imageSrc)}
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 quality={95}
                 className="object-contain transition duration-300 ease-out group-hover:scale-[1.01]"

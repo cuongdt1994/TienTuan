@@ -47,6 +47,11 @@ const nextConfig: NextConfig = {
     // scoped to that exact endpoint and bucket path; do not allow arbitrary local IPs.
     dangerouslyAllowLocalIP: true,
     formats: ["image/webp"],
+    // Keep Worker transforms below Cloudflare's CPU budget. Original assets
+    // are bypassed in the site components; these sizes cover the responsive
+    // thumbnails and prevent accidental 3840px cold transforms.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
+    imageSizes: [256, 384, 640, 750, 828, 1080, 1200, 1600],
     qualities: [75, 90, 95],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
