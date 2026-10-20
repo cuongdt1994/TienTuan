@@ -32,9 +32,10 @@ export async function POST(request: Request) {
     const original = await bucket.get(parsed.data.objectKey);
     if (!original?.body) throw new Error("Missing avatar body");
     const output = await images.input(original.body).transform({ width: 900, height: 900, fit: "cover" }).output({ format: "image/webp", quality: 90 });
+    const body = await new Response(output.image()).arrayBuffer();
     const safeName = parsed.data.filename.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/\.[^.]+$/, "");
     const key = `site/intro/avatar-${crypto.randomUUID()}-${safeName || "profile"}.webp`;
-    await bucket.put(key, output.image(), { httpMetadata: { contentType: "image/webp", cacheControl: "public, max-age=31536000, immutable" } });
+    await bucket.put(key, body, { httpMetadata: { contentType: "image/webp", cacheControl: "public, max-age=31536000, immutable" } });
     const avatarUrl = `/media/${key}`;
     const current = await db.siteSettings.findUnique({ where: { id: "site" } });
     await db.siteSettings.upsert({

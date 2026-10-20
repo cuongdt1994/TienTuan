@@ -10,7 +10,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!imageId.test(id)) return new Response("Not found", { status: 404 });
 
   const secret = process.env.AUTH_SECRET ?? "";
-  if (!await verifyImageSourceToken(id, request.headers.get("x-image-source-token"), secret)) {
+  const token = request.headers.get("x-image-source-token") ?? new URL(request.url).searchParams.get("token");
+  if (!await verifyImageSourceToken(id, token, secret)) {
     return new Response("Not found", { status: 404 });
   }
 

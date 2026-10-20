@@ -16,13 +16,27 @@ function prune(now: number) {
 }
 
 export function getClientKey(request: Request) {
+  // Cloudflare overwrites this header at the edge. Prefer it over the
+  // user-controlled forwarding headers so attackers cannot rotate XFF values
+  // to bypass login/upload throttles.
+  const cloudflareIp = request.headers.get("cf-connecting-ip")?.trim();
+  if (cloudflareIp && isIpAddress(cloudflareIp)) return cloudflareIp;
+
   if (env.TRUST_PROXY_HEADERS) {
     const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    if (forwarded) return forwarded;
+    if (forwarded && isIpAddress(forwarded)) return forwarded;
     const realIp = request.headers.get("x-real-ip")?.trim();
-    if (realIp) return realIp;
+    if (realIp && isIpAddress(realIp)) return realIp;
   }
   return "unknown";
+}
+
+function isIpAddress(value: string) {
+  if (value.length > 45) return false;
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(value)) {
+    return value.split(".").every((part) => Number(part) <= 255);
+  }
+  return /^[0-9a-f:]+$/i.test(value) && value.includes(":");
 }
 
 export function consumeRateLimit(key: string, limit: number, windowMs: number) {

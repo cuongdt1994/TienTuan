@@ -3,8 +3,10 @@ import { createSession, verifyCredentials } from "@/lib/auth";
 import { consumeRateLimit, getClientKey, resetRateLimit } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
+import { isSameOrigin } from "@/lib/request-security";
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   const rateLimitKey = `login:${getClientKey(request)}`;
   const rateLimit = consumeRateLimit(rateLimitKey, 8, 15 * 60 * 1000);
   if (!rateLimit.allowed) return NextResponse.json({ error: "Too many login attempts. Try again later." }, { status: 429, headers: { "Retry-After": String(rateLimit.retryAfter) } });

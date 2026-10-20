@@ -15,28 +15,32 @@ export async function getImageDimensions(file: File) {
 
 export function uploadAdminFile(file: File, onProgress?: (progress: number) => void, signal?: AbortSignal) {
   return new Promise<{ objectKey: string }>((resolve, reject) => {
-    void fetch("/api/admin/upload/presign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }), signal })
-      .then(async (response) => {
-        const data = await response.json() as { objectKey?: string; uploadUrl?: string; contentType?: string; error?: string };
-        if (!response.ok || !data.objectKey || !data.uploadUrl) throw new Error(data.error ?? "Could not prepare upload");
-        return new Promise<{ objectKey: string }>((uploadResolve, uploadReject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("PUT", data.uploadUrl!);
-          xhr.setRequestHeader("Content-Type", data.contentType ?? file.type);
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
-          };
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) uploadResolve({ objectKey: data.objectKey! });
-            else uploadReject(new Error("R2 upload failed"));
-          };
-          xhr.onerror = () => uploadReject(new Error("R2 upload failed"));
-          xhr.onabort = () => uploadReject(new Error("Upload cancelled"));
-          signal?.addEventListener("abort", () => xhr.abort(), { once: true });
-          xhr.send(file);
-        });
-      })
-      .then(resolve)
-      .catch(reject);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/admin/upload");
+    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.setRequestHeader("X-Upload-Filename", encodeURIComponent(file.name));
+    xhr.setRequestHeader("X-Upload-Size", String(file.size));
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+    xhr.onload = () => {
+      const responseText = xhr.responseText?.trim();
+      let data: { objectKey?: string; error?: string } = {};
+      try {
+        data = JSON.parse(responseText || "{}") as typeof data;
+      } catch {
+        reject(new Error(`Upload failed (${xhr.status || "network"})`));
+        return;
+      }
+      if (xhr.status >= 200 && xhr.status < 300 && data.objectKey) {
+        resolve({ objectKey: data.objectKey });
+        return;
+      }
+      reject(new Error(data.error ?? `Upload failed (${xhr.status || "network"})`));
+    };
+    xhr.onerror = () => reject(new Error("Upload failed (network error)"));
+    xhr.onabort = () => reject(new Error("Upload cancelled"));
+    signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+    xhr.send(file);
   });
 }

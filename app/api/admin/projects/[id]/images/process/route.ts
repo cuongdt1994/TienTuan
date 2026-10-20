@@ -7,7 +7,6 @@ import { imageProcessSchema, MAX_UPLOAD_BYTES } from "@/lib/validations";
 import { recordAudit } from "@/lib/audit";
 import { isSameOrigin } from "@/lib/request-security";
 import { variantUrl } from "@/lib/image-variants";
-import { createCloudflareRemoteVariants } from "@/lib/cloudflare-variants";
 import { writeImageSourceManifest } from "@/lib/image-source";
 import { invalidateSiteContent } from "@/lib/content-cache";
 
@@ -39,9 +38,7 @@ export async function POST(request: Request, context: Context) {
     if (!project.coverImageId) await db.project.update({ where: { id: projectId }, data: { coverImageId: image.id } });
     await recordAudit({ userId: user.id === "dev-admin" ? undefined : user.id, action: "IMAGE_UPLOADED", entityType: "Image", entityId: image.id, metadata: { projectId, filename } });
     invalidateSiteContent();
-    const context = await import("@opennextjs/cloudflare").then(({ getCloudflareContext }) => getCloudflareContext({ async: true }));
-    const variants = "processing";
-    context.ctx.waitUntil(createCloudflareRemoteVariants(image.id, request.url).catch((error) => console.error("Cloudflare image variants failed", error)));
+    const variants = "on-demand";
     return NextResponse.json({ image, variants });
   } catch (error) {
     console.error("Image processing failed", error);

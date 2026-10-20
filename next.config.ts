@@ -8,22 +8,30 @@ const imageOrigin = (() => {
   }
 })();
 
+const localImagePatterns = process.env.NODE_ENV === "production" ? [] : [
+  { protocol: "http" as const, hostname: "localhost", port: "9000" },
+  { protocol: "https" as const, hostname: "localhost", port: "9000" },
+  { protocol: "http" as const, hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
+  { protocol: "https" as const, hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
+];
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  "frame-ancestors 'self'",
+  "frame-ancestors 'none'",
   "form-action 'self'",
   "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${imageOrigin}`,
   `connect-src 'self' ${imageOrigin} https://cloudflareinsights.com`,
   "font-src 'self' data:",
+  ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   { key: "X-DNS-Prefetch-Control", value: "on" },
@@ -42,15 +50,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
-      { protocol: "http", hostname: "localhost", port: "9000" },
-      { protocol: "https", hostname: "localhost", port: "9000" },
-      { protocol: "http", hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
-      { protocol: "https", hostname: "10.100.101.22", port: "9010", pathname: "/photography/**" },
+      ...localImagePatterns,
       { protocol: "https", hostname: "media.tientuanphoto.com", pathname: "/**" },
     ],
-    // The production MinIO endpoint is a private IP by design. Keep the exception
-    // scoped to that exact endpoint and bucket path; do not allow arbitrary local IPs.
-    dangerouslyAllowLocalIP: true,
     formats: ["image/webp"],
     // Keep Worker transforms below Cloudflare's CPU budget. Original assets
     // are bypassed in the site components; these sizes cover the responsive

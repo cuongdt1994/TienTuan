@@ -8,7 +8,7 @@ type VariantBindings = {
   PHOTOGRAPHY_R2?: {
     get: (key: string) => Promise<{ body?: ReadableStream<Uint8Array> } | null>;
     head: (key: string) => Promise<unknown>;
-    put: (key: string, value: ReadableStream<Uint8Array>, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }) => Promise<unknown>;
+    put: (key: string, value: ArrayBuffer | ReadableStream<Uint8Array>, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }) => Promise<unknown>;
   };
   IMAGES?: {
     input: (stream: ReadableStream<Uint8Array>) => { transform: (options: { width: number; fit: "scale-down" }) => { output: (options: { format: "image/avif" | "image/webp" | "image/jpeg"; quality: number }) => Promise<{ image: () => ReadableStream<Uint8Array> }> } };
@@ -40,7 +40,8 @@ export async function createCloudflareWebpVariants(imageId: string, objectKey: s
       const output = await images.input(source.body)
         .transform({ width, fit: "scale-down" })
         .output({ format: imageFormat(format), quality: format === "avif" ? 73 : format === "webp" ? 88 : 90 });
-      await bucket.put(key, output.image(), {
+      const body = await new Response(output.image()).arrayBuffer();
+      await bucket.put(key, body, {
         httpMetadata: { contentType: imageFormat(format), cacheControl: "public, max-age=31536000, immutable" },
       });
     }
@@ -60,28 +61,29 @@ export async function createCloudflareRemoteVariants(imageId: string, baseUrl: s
   const secret = process.env.AUTH_SECRET ?? "";
   if (!bucket || !secret) return false;
 
-  const sourceUrl = new URL(`/img/source/${encodeURIComponent(imageId)}`, baseUrl).toString();
   const token = await createImageSourceToken(imageId, secret);
-  for (const width of VARIANT_WIDTHS) {
-    for (const format of VARIANT_FORMATS) {
-      const key = variantKey(imageId, width, format);
-      if (await bucket.head(key)) continue;
-      const transformed = await fetch(sourceUrl, {
-        headers: { "x-image-source-token": token },
-        cf: {
-          image: {
-            width,
-            fit: "scale-down",
-            format: format as "avif" | "webp" | "jpeg",
-            quality: format === "avif" ? 73 : format === "webp" ? 88 : 90,
-          },
+  const sourceUrlObject = new URL(`/img/source/${encodeURIComponent(imageId)}`, baseUrl);
+  sourceUrlObject.searchParams.set("token", token);
+  const sourceUrl = sourceUrlObject.toString();
+  await Promise.all(VARIANT_WIDTHS.flatMap((width) => VARIANT_FORMATS.map(async (format) => {
+    const key = variantKey(imageId, width, format);
+    if (await bucket.head(key)) return;
+    const transformed = await fetch(sourceUrl, {
+      headers: { "x-image-source-token": token },
+      cf: {
+        image: {
+          width,
+          fit: "scale-down",
+          format: format as "avif" | "webp" | "jpeg",
+          quality: format === "avif" ? 73 : format === "webp" ? 88 : 90,
         },
-      } as ImageTransformFetchInit);
-      if (!transformed.ok || !transformed.body) throw new Error(`Cloudflare image transformation failed (${transformed.status})`);
-      await bucket.put(key, transformed.body, {
-        httpMetadata: { contentType: imageFormat(format), cacheControl: "public, max-age=31536000, immutable" },
-      });
-    }
-  }
+      },
+    } as ImageTransformFetchInit);
+    if (!transformed.ok || !transformed.body) throw new Error(`Cloudflare image transformation failed (${transformed.status})`);
+    const body = await transformed.arrayBuffer();
+    await bucket.put(key, body, {
+      httpMetadata: { contentType: imageFormat(format), cacheControl: "public, max-age=31536000, immutable" },
+    });
+  })));
   return true;
 }

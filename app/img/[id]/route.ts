@@ -1,4 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { AwsClient } from "aws4fetch";
 import { nearestVariantWidth, preferredVariantFormat, variantContentType, variantKey } from "@/lib/image-variants";
 import { readImageSourceManifest } from "@/lib/image-source";
 import { createImageSourceToken } from "@/lib/image-source-auth";
@@ -13,12 +14,29 @@ type TransformFetchInit = RequestInit & {
 };
 
 type VariantBucket = BucketLike & {
-  put: (key: string, value: ReadableStream<Uint8Array>, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }) => Promise<unknown>;
+  put: (key: string, value: ArrayBuffer | ReadableStream<Uint8Array>, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }) => Promise<unknown>;
 };
+
+const IMAGE_CACHE_VERSION = "6";
+
+function outputContentType(value: string | null, fallback: string) {
+  return value === "image/avif" || value === "image/webp" || value === "image/jpeg" ? value : fallback;
+}
+
+function detectedContentType(body: ArrayBuffer, fallback: string) {
+  const bytes = new Uint8Array(body);
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP") return "image/webp";
+  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(4, 8)) === "ftyp") {
+    const brand = String.fromCharCode(...bytes.slice(8, 12));
+    if (brand === "avif" || brand === "avis") return "image/avif";
+  }
+  return fallback;
+}
 
 function cacheKey(request: Request, width: number, format: string) {
   const url = new URL(request.url);
-  url.search = `?w=${width}&f=${format}`;
+  url.search = `?w=${width}&f=${format}&v=${IMAGE_CACHE_VERSION}`;
   return new Request(url.toString(), { method: "GET" });
 }
 
@@ -26,33 +44,67 @@ function notModified(etag: string | null, request: Request) {
   return Boolean(etag && request.headers.get("if-none-match") === etag);
 }
 
+async function signedR2SourceUrl(objectKey: string) {
+  const accountId = process.env.R2_ACCOUNT_ID?.trim();
+  const accessKeyId = process.env.R2_S3_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.R2_S3_SECRET_ACCESS_KEY?.trim();
+  const bucket = process.env.MINIO_BUCKET?.trim() || "photography";
+  if (!accountId || !accessKeyId || !secretAccessKey) return null;
+
+  const url = new URL(`https://${accountId}.r2.cloudflarestorage.com/${bucket}/${objectKey}`);
+  url.searchParams.set("X-Amz-Expires", "900");
+  const signed = await new AwsClient({ accessKeyId, secretAccessKey, service: "s3", region: "auto" }).sign(
+    new Request(url, { method: "GET" }),
+    { aws: { signQuery: true } },
+  );
+  return signed.url.toString();
+}
+
 async function generateMissingVariant(request: Request, id: string, width: number, format: string, bucket: VariantBucket, context: { ctx: { waitUntil: (promise: Promise<unknown>) => void } }) {
   const secret = process.env.AUTH_SECRET ?? "";
   if (!secret) return null;
   const manifest = await readImageSourceManifest(bucket, id);
   if (!manifest) return null;
-  const sourceUrl = new URL(`/img/source/${encodeURIComponent(id)}`, request.url).toString();
-  const transformed = await fetch(sourceUrl, {
-    headers: { "x-image-source-token": await createImageSourceToken(id, secret) },
-    cf: {
-      image: {
-        width,
-        fit: "scale-down",
-        format: format as "avif" | "webp" | "jpeg",
-        quality: format === "avif" ? 73 : format === "webp" ? 88 : 90,
-      },
-    },
-  } as TransformFetchInit);
-  if (!transformed.ok || !transformed.body) return null;
+  const sourceUrlObject = new URL(`/img/source/${encodeURIComponent(id)}`, request.url);
+  const sourceToken = await createImageSourceToken(id, secret);
+  sourceUrlObject.searchParams.set("token", sourceToken);
+  const sourceUrl = await signedR2SourceUrl(manifest.objectKey) ?? sourceUrlObject.toString();
+  let transformed: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const candidate = await fetch(sourceUrl, {
+        headers: sourceUrl === sourceUrlObject.toString() ? { "x-image-source-token": sourceToken } : undefined,
+        cf: {
+          image: {
+            width,
+            fit: "scale-down",
+            format: format as "avif" | "webp" | "jpeg",
+            quality: format === "avif" ? 73 : format === "webp" ? 88 : 90,
+          },
+        },
+      } as TransformFetchInit);
+      if (candidate.ok && candidate.body) {
+        transformed = candidate;
+        break;
+      }
+    } catch {
+      // A transient R2/Image Transform failure is retried below.
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 80 * (attempt + 1)));
+  }
+  if (!transformed?.body) return null;
+  const body = await transformed.arrayBuffer();
+  const contentType = detectedContentType(body, outputContentType(transformed.headers.get("content-type"), variantContentType(format as "avif" | "webp" | "jpeg")));
   const responseHeaders = new Headers(transformed.headers);
   responseHeaders.set("Cache-Control", "public, max-age=31536000, immutable");
   responseHeaders.set("Content-Disposition", "inline");
-  responseHeaders.set("Content-Type", variantContentType(format as "avif" | "webp" | "jpeg"));
+  responseHeaders.set("Content-Type", contentType);
   responseHeaders.set("Vary", "Accept");
   responseHeaders.set("X-Content-Type-Options", "nosniff");
-  const response = new Response(transformed.clone().body, { headers: responseHeaders });
-  context.ctx.waitUntil(bucket.put(variantKey(id, width as 640 | 1280 | 1920 | 2560 | 3200, format as "avif" | "webp" | "jpeg"), transformed.body, {
-    httpMetadata: { contentType: variantContentType(format as "avif" | "webp" | "jpeg"), cacheControl: "public, max-age=31536000, immutable" },
+  responseHeaders.set("Content-Length", String(body.byteLength));
+  const response = new Response(body.slice(0), { headers: responseHeaders });
+  context.ctx.waitUntil(bucket.put(variantKey(id, width as 640 | 1280 | 1920 | 2560 | 3200, format as "avif" | "webp" | "jpeg"), body, {
+    httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
   }));
   return response;
 }

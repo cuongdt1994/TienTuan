@@ -56,7 +56,7 @@ export const imageProcessSchema = z.object({
   contentType: z.enum(IMAGE_TYPES),
   width: z.number().int().positive().max(20000),
   height: z.number().int().positive().max(20000),
-});
+}).refine((value) => value.width * value.height <= MAX_IMAGE_PIXELS, "Image dimensions are too large");
 
 export const avatarProcessSchema = z.object({
   objectKey: imageProcessSchema.shape.objectKey,
